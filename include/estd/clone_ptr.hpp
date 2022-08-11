@@ -32,20 +32,20 @@
 #include <memory>
 
 
-template <class... Ts>
-struct overloaded : Ts... {
-	using Ts::operator()...;
-};
-// explicit deduction guide (not needed as of C++20)
-template <class... Ts>
-overloaded(Ts...) -> overloaded<Ts...>;
+// template <class... Ts>
+// struct overloaded : Ts... {
+// 	using Ts::operator()...;
+// };
+// // explicit deduction guide (not needed as of C++20)
+// template <class... Ts>
+// overloaded(Ts...) -> overloaded<Ts...>;
 
-#define ESTD_PRIVATE_DO_NOT_USE_HAS_METHOD(class_type, method)                                                         \
-	overloaded{[](auto* arg, decltype(&std::decay_t<decltype(*arg)>::method) ptr) constexpr {return true;              \
-	}                                                                                                                  \
-	, [](auto* arg, ...) constexpr { return false; }                                                                   \
-	}                                                                                                                  \
-	((class_type*)nullptr, nullptr)
+// #define ESTD_PRIVATE_DO_NOT_USE_HAS_METHOD(class_type, method)                                                         \
+// 	overloaded{[](auto* arg, decltype(&std::decay_t<decltype(*arg)>::method) ptr) constexpr {return true;              \
+// 	}                                                                                                                  \
+// 	, [](auto* arg, ...) constexpr { return false; }                                                                   \
+// 	}                                                                                                                  \
+// 	((class_type*)nullptr, nullptr)
 
 
 
