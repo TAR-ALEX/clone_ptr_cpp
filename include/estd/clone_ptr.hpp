@@ -51,7 +51,7 @@ overloaded(Ts...) -> overloaded<Ts...>;
 
 namespace estd {
 	class clonable {
-        public:
+	public:
 		virtual clonable* clone() const = 0;
 	};
 
@@ -91,6 +91,14 @@ namespace estd {
 		}
 
 		clone_ptr(clone_ptr&& other) {
+			if constexpr (std::is_base_of<clonable, T>::value) {
+				this->reset((T*)other->clone());
+			} else {
+				this->reset(new T(*other));
+			}
+		}
+
+		clone_ptr(T* other) {
 			if constexpr (std::is_base_of<clonable, T>::value) {
 				this->reset((T*)other->clone());
 			} else {
@@ -140,7 +148,7 @@ namespace estd {
 			return *this;
 		}
 
-		clone_ptr& operator=(const T* other) noexcept {
+		clone_ptr& operator=(T* other) noexcept {
 			if constexpr (std::is_base_of<clonable, T>::value) {
 				this->reset((T*)other->clone());
 			} else {
