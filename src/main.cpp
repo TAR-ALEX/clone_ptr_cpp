@@ -32,6 +32,7 @@
 #include <iostream>
 #include <vector>
 
+using namespace estd::shortnames;
 
 struct TypeX : public estd::clonable {
 	virtual void print() = 0;
@@ -76,16 +77,23 @@ int main() {
 
 	for (auto& e : arra) { e->print(); }
 
-	estd::clone_ptr<int> i = 0;
-	estd::clone_ptr<int> j = i;
-	estd::clone_ptr<int> k;
+	estd::joint_ptr<int> i = 0;
+	estd::joint_ptr<int> j = i;
+	estd::joint_ptr<int> k;
 
 	i += 4;
 	std::cout << (*j) << std::endl;
 
 	std::cout << (i == nullptr) << std::endl;
 	std::cout << (j == nullptr) << std::endl;
-	std::cout << (k == nullptr) << std::endl;
+	std::cout << (k == nullptr) << std::endl<< std::endl;
+
+	estd::clone_ptr<std::array<int, 2>> arr({1,2});
+	arr[0] = 7;
+	arr[1] = 8;
+
+	std::cout << arr[0] << std::endl;
+	std::cout << arr[1] << std::endl;
 
 	return 0;
 }

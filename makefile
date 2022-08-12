@@ -32,6 +32,10 @@ CC=g++
 CC_CPP=g++
 CC_C=gcc
 
+# CC=clang++
+# CC_CPP=clang++
+# CC_C=clang
+
 CCFLAGS= -Wall -O3 -I"./include" -I"./vendor/include"
 
 CPP_CCFlags=$(CCFLAGS) -std=c++17

@@ -82,11 +82,14 @@ namespace estd {
 	// two copies of the object, value like behavior.
 	template <typename T>
 	class clone_ptr : public std::unique_ptr<T> {
+		static_assert(
+			!std::is_array<T>::value, "Error: clone_ptr not supported on raw arrays, they are not easily copyable."
+		);
+
 		using Parent = std::unique_ptr<T>;
 
 	public:
 		using std::unique_ptr<T>::unique_ptr;
-		using std::unique_ptr<T>::operator*;
 
 		clone_ptr() {}
 
@@ -203,7 +206,9 @@ namespace estd {
 			return *this;
 		}
 
-		template <typename... Args, typename = decltype(T(std::declval<Args>()...))>
+		template <
+			typename... Args,
+			typename = decltype(typename std::remove_all_extents<T>::type(std::declval<Args>()...))>
 		clone_ptr(Args&&... params) : Parent(new T(std::forward<Args>(params)...)) {}
 
 		/////////ITERATOR FORWARDING/////////
@@ -282,6 +287,8 @@ namespace estd {
 			(*(this->get()))(std::forward<Args>(params)...);
 		}
 
+		T& operator*() const { return *(this->get()); }
+
 		bool operator==(std::nullptr_t) { return this->get() == nullptr; }
 		bool operator!=(std::nullptr_t) { return this->get() != nullptr; }
 
@@ -298,10 +305,12 @@ namespace estd {
 
 	public:
 		using std::shared_ptr<T>::shared_ptr;
-		using std::shared_ptr<T>::operator*;
 
-		template <typename... Args, typename = decltype(T(std::declval<Args>()...))>
-		joint_ptr(Args&&... params) : Parent(new T(std::forward<Args>(params)...)) {}
+		template <
+			typename... Args,
+			typename = decltype(typename std::remove_all_extents<T>::type(std::declval<Args>()...))>
+		joint_ptr(Args&&... params) :
+			Parent(new T(std::forward<Args>(params)...)) {}//std::static_assert(!std::is_array<T>::value, "HAHAH")
 
 		/////////ITERATOR FORWARDING/////////
 
@@ -379,6 +388,8 @@ namespace estd {
 			(*(this->get()))(std::forward<Args>(params)...);
 		}
 
+		T& operator*() const { return *(this->get()); }
+
 		bool operator==(std::nullptr_t) { return this->get() == nullptr; }
 		bool operator!=(std::nullptr_t) { return this->get() != nullptr; }
 
@@ -387,6 +398,12 @@ namespace estd {
 #endif
 	};
 
+	namespace shortnames {
+		template <typename T>
+		using cptr = clone_ptr<T>;
+		template <typename T>
+		using jptr = joint_ptr<T>;
+	};// namespace shortnames
 
 };// namespace estd
 
