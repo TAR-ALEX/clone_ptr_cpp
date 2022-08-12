@@ -28,64 +28,59 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#include <estd/clone_ptr.hpp>
+#include <estd/ptr.hpp>
 #include <iostream>
+#include <vector>
 
-struct ExampleType {
+
+struct TypeX : public estd::clonable {
+	virtual void print() = 0;
+};
+
+struct TypeA : public TypeX {
 	int x;
 	int y;
 	int z;
-	ExampleType(int x,  int y, int z): x(x), y(y), z(z) {}
-	void print(){
-		std::cout << "(" << x << ","<< y << ","<< z  << ")\n";
+
+	TypeA(int x, int y, int z) : x(x), y(y), z(z) { std::cerr << "ran construct\n"; }
+	virtual void print() { std::cout << "TypeA(" << x << "," << y << "," << z << ")\n"; }
+	virtual ~TypeA() { std::cerr << "ran destruct\n"; }
+
+	clonable* clone() const {
+		std::cout << "ran clone\n";
+		return new TypeA(x, y, z);
 	}
 };
 
-struct ExampleTypeClonable: public estd::clonable {
-	int x;
-	int y;
-	int z;
-	ExampleTypeClonable(int x,  int y, int z): x(x), y(y), z(z) {}
-	void print(){
-		std::cout << "(" << x << ","<< y << ","<< z  << ")\n";
-	}
-	
-	clonable* clone() const{
+struct TypeB : public TypeA {
+	TypeB(int x, int y, int z) : TypeA(x, y, z) {}
+	virtual void print() { std::cout << "TypeB(" << x << "," << y << "," << z << ")\n"; }
+
+	clonable* clone() const {
 		std::cout << "ran clone\n";
-		return new ExampleTypeClonable(x,y,z);
+		return new TypeB(x, y, z);
 	}
 };
 
 int main() {
-	estd::clone_ptr<int> i(1);
-	estd::clone_ptr<int> j(2);
-	estd::clone_ptr<ExampleType> tst(1,2,3);
-	estd::clone_ptr<ExampleType> tst2(tst);
+	estd::clone_ptr<std::vector<estd::clone_ptr<TypeX>>> arra = new std::vector<estd::clone_ptr<TypeX>>();
+	arra->resize(6);
 
-	std::cout << *i << std::endl;
-	std::cout << *j << std::endl;
-	std::cout << std::endl;
+	arra[0] = new TypeA(1, 2, 3);
+	arra[1] = new TypeB(4, 5, 6);
+	arra[2] = new TypeA(7, 8, 9);
+	arra[3] = new TypeB(10, 11, 12);
+	arra[4] = arra[1];
+	arra[4] = arra[0];
+	arra[5] = arra[1];
 
-	j = i;
+	for (auto& e : arra) { e->print(); }
 
-	std::cout << *i << std::endl;
-	std::cout << *j << std::endl;
-	std::cout << std::endl;
+	estd::joint_ptr<int> i = 0;
+	estd::joint_ptr<int> j = i;
 
-	*j = 2;
-
-	std::cout << *i << std::endl;
-	std::cout << *j << std::endl;
-	std::cout << std::endl;
-
-	tst2->x = 9;
-
-	tst->print();
-	tst2->print();
+	i += 4;
+	std::cout << (*j);
 
 	return 0;
 }
-
-
-//if constexpr (ESTD_PRIVATE_DO_NOT_USE_HAS_METHOD(T, clone)) {
-//std::is_base_of<A, B>::value
