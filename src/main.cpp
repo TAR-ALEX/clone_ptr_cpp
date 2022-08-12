@@ -76,11 +76,16 @@ int main() {
 
 	for (auto& e : arra) { e->print(); }
 
-	estd::joint_ptr<int> i = 0;
-	estd::joint_ptr<int> j = i;
+	estd::clone_ptr<int> i = 0;
+	estd::clone_ptr<int> j = i;
+	estd::clone_ptr<int> k;
 
 	i += 4;
-	std::cout << (*j);
+	std::cout << (*j) << std::endl;
+
+	std::cout << (i == nullptr) << std::endl;
+	std::cout << (j == nullptr) << std::endl;
+	std::cout << (k == nullptr) << std::endl;
 
 	return 0;
 }

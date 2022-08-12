@@ -282,6 +282,9 @@ namespace estd {
 			(*(this->get()))(std::forward<Args>(params)...);
 		}
 
+		bool operator==(std::nullptr_t) { return this->get() == nullptr; }
+		bool operator!=(std::nullptr_t) { return this->get() != nullptr; }
+
 #if __cplusplus >= 202002L
 		DEFINE_BIN_OP(<=>)
 #endif
@@ -292,6 +295,7 @@ namespace estd {
 	template <typename T>
 	class joint_ptr : public std::shared_ptr<T> {
 		using Parent = std::shared_ptr<T>;
+
 	public:
 		using std::shared_ptr<T>::shared_ptr;
 		using std::shared_ptr<T>::operator*;
@@ -374,6 +378,9 @@ namespace estd {
 		decltype(auto) operator()(Args&&... params) {
 			(*(this->get()))(std::forward<Args>(params)...);
 		}
+
+		bool operator==(std::nullptr_t) { return this->get() == nullptr; }
+		bool operator!=(std::nullptr_t) { return this->get() != nullptr; }
 
 #if __cplusplus >= 202002L
 		DEFINE_BIN_OP(<=>)
