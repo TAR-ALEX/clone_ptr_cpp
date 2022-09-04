@@ -64,6 +64,10 @@ struct TypeB : public TypeA {
 };
 
 int main() {
+    optr<int> it = 1;
+    it += 1;
+    std::cout << (*it) << std::endl;
+
 	estd::clone_ptr<std::vector<estd::clone_ptr<TypeX>>> arra = new std::vector<estd::clone_ptr<TypeX>>();
 	arra->resize(6);
 
