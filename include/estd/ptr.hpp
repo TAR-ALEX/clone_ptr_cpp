@@ -31,417 +31,523 @@
 #pragma once
 
 #include <memory>
+#include <optional>
 #include <type_traits>
 
 #define DEFINE_BIN_OP(OPT)                                                                                             \
-    template <typename T2>                                                                                             \
-    decltype(auto) operator OPT(const T2& other) {                                                                     \
-        return (*(this->get()))OPT other;                                                                              \
-    }                                                                                                                  \
-    template <typename T2>                                                                                             \
-    decltype(auto) operator OPT(T2&& other) {                                                                          \
-        return (*(this->get()))OPT other;                                                                              \
-    }                                                                                                                  \
-    template <typename T2>                                                                                             \
-    decltype(auto) operator OPT(const clone_ptr<T2>& other) {                                                          \
-        return (*(this->get()))OPT(*(other.get()));                                                                    \
-    }                                                                                                                  \
-    template <typename T2>                                                                                             \
-    decltype(auto) operator OPT(clone_ptr<T2>&& other) {                                                               \
-        return (*(this->get()))OPT(*(other.get()));                                                                    \
-    }
+	template <typename T2>                                                                                             \
+	decltype(auto) operator OPT(const T2& other) {                                                                     \
+		return (*(this->get()))OPT other;                                                                              \
+	}                                                                                                                  \
+	template <typename T2>                                                                                             \
+	decltype(auto) operator OPT(T2&& other) {                                                                          \
+		return (*(this->get()))OPT other;                                                                              \
+	}                                                                                                                  \
+	template <typename T2>                                                                                             \
+	decltype(auto) operator OPT(const clone_ptr<T2>& other) {                                                          \
+		return (*(this->get()))OPT(*(other.get()));                                                                    \
+	}                                                                                                                  \
+	template <typename T2>                                                                                             \
+	decltype(auto) operator OPT(clone_ptr<T2>&& other) {                                                               \
+		return (*(this->get()))OPT(*(other.get()));                                                                    \
+	}
 
 
 #define DEFINE_PRE_OP(OPT)                                                                                             \
-    template <typename T2>                                                                                             \
-    decltype(auto) operator OPT(int) {                                                                                 \
-        return OPT(*(this->get()));                                                                                    \
-    }
+	template <typename T2>                                                                                             \
+	decltype(auto) operator OPT(int) {                                                                                 \
+		return OPT(*(this->get()));                                                                                    \
+	}
 
 #define DEFINE_POST_OP(OPT)                                                                                            \
-    template <typename T2>                                                                                             \
-    decltype(auto) operator OPT() {                                                                                    \
-        return (*(this->get()))OPT;                                                                                    \
-    }
+	template <typename T2>                                                                                             \
+	decltype(auto) operator OPT() {                                                                                    \
+		return (*(this->get()))OPT;                                                                                    \
+	}
 
 #define DEFINE_UNARY_OP(OPT)                                                                                           \
-    template <typename T2>                                                                                             \
-    decltype(auto) operator OPT() {                                                                                    \
-        return OPT(*(this->get()));                                                                                    \
-    }
+	template <typename T2>                                                                                             \
+	decltype(auto) operator OPT() {                                                                                    \
+		return OPT(*(this->get()));                                                                                    \
+	}
 
 
 namespace estd {
-    class clonable {
-    public:
-        virtual clonable* clone() const = 0;
-        virtual ~clonable() = default;
-    };
+	class clonable {
+	public:
+		virtual clonable* clone() const = 0;
+		virtual ~clonable() = default;
+	};
 
-    // Literally the same as a unique pointer, but you can copy it and it makes
-    // two copies of the object, value like behavior.
-    template <typename T>
-    class clone_ptr : public std::unique_ptr<T> {
-        static_assert(
-            !std::is_array<T>::value, "Error: clone_ptr not supported on raw arrays, they are not easily copyable."
-        );
+	// Literally the same as a unique pointer, but you can copy it and it makes
+	// two copies of the object, value like behavior.
+	template <typename T>
+	class clone_ptr : public std::unique_ptr<T> {
+		static_assert(
+			!std::is_array<T>::value, "Error: clone_ptr not supported on raw arrays, they are not easily copyable."
+		);
 
-        using Parent = std::unique_ptr<T>;
+		using Parent = std::unique_ptr<T>;
 
-    public:
-        using std::unique_ptr<T>::unique_ptr;
+	public:
+		using std::unique_ptr<T>::unique_ptr;
 
-        clone_ptr() {}
+		clone_ptr() {}
 
-        clone_ptr(const T& other) {
-            if constexpr (std::is_base_of<clonable, T>::value) {
-                this->reset((T*)other.clone());
-            } else {
-                this->reset(new T(other));
-            }
-        }
+		clone_ptr(const T& other) {
+			if constexpr (std::is_base_of<clonable, T>::value) {
+				this->reset((T*)other.clone());
+			} else {
+				this->reset(new T(other));
+			}
+		}
 
-        clone_ptr(T&& other) {
-            if constexpr (std::is_base_of<clonable, T>::value) {
-                this->reset((T*)other.clone());
-            } else {
-                this->reset(new T(other));
-            }
-        }
+		clone_ptr(T&& other) {
+			if constexpr (std::is_base_of<clonable, T>::value) {
+				this->reset((T*)other.clone());
+			} else {
+				this->reset(new T(other));
+			}
+		}
 
-        clone_ptr(const clone_ptr& other) {
-            if (other.get() == nullptr) {
-                this->reset(nullptr);
-                return;
-            }
-            if constexpr (std::is_base_of<clonable, T>::value) {
-                this->reset((T*)other->clone());
-            } else {
-                this->reset(new T(*other));
-            }
-        }
+		clone_ptr(const clone_ptr& other) {
+			if (other.get() == nullptr) {
+				this->reset(nullptr);
+				return;
+			}
+			if constexpr (std::is_base_of<clonable, T>::value) {
+				this->reset((T*)other->clone());
+			} else {
+				this->reset(new T(*other));
+			}
+		}
 
-        template <typename T2>
-        clone_ptr(const clone_ptr<T2>& other) {
-            if (other.get() == nullptr) {
-                this->reset(nullptr);
-                return;
-            }
-            if constexpr (std::is_base_of<clonable, T>::value) {
-                this->reset((T*)other->clone());
-            } else {
-                this->reset(new T(*other));
-            }
-        }
+		template <typename T2>
+		clone_ptr(const clone_ptr<T2>& other) {
+			if (other.get() == nullptr) {
+				this->reset(nullptr);
+				return;
+			}
+			if constexpr (std::is_base_of<clonable, T>::value) {
+				this->reset((T*)other->clone());
+			} else {
+				this->reset(new T(*other));
+			}
+		}
 
-        clone_ptr(clone_ptr&& other) {
-            if (other.get() == nullptr) {
-                this->reset(nullptr);
-                return;
-            }
-            if constexpr (std::is_base_of<clonable, T>::value) {
-                this->reset((T*)other->clone());
-            } else {
-                this->reset(new T(*other));
-            }
-        }
+		clone_ptr(clone_ptr&& other) {
+			if (other.get() == nullptr) {
+				this->reset(nullptr);
+				return;
+			}
+			if constexpr (std::is_base_of<clonable, T>::value) {
+				this->reset((T*)other->clone());
+			} else {
+				this->reset(new T(*other));
+			}
+		}
 
-        template <typename T2>
-        clone_ptr(clone_ptr<T2>&& other) {
-            if (other.get() == nullptr) {
-                this->reset(nullptr);
-                return;
-            }
-            if constexpr (std::is_base_of<clonable, T>::value) {
-                this->reset((T*)other->clone());
-            } else {
-                this->reset(new T(*other));
-            }
-        }
+		template <typename T2>
+		clone_ptr(clone_ptr<T2>&& other) {
+			if (other.get() == nullptr) {
+				this->reset(nullptr);
+				return;
+			}
+			if constexpr (std::is_base_of<clonable, T>::value) {
+				this->reset((T*)other->clone());
+			} else {
+				this->reset(new T(*other));
+			}
+		}
 
-        clone_ptr(T* other) { this->reset(other); }
+		clone_ptr(T* other) { this->reset(other); }
 
-        clone_ptr& operator=(const clone_ptr& other) noexcept {
-            if (other.get() == nullptr) {
-                this->reset(nullptr);
-                return *this;
-                ;
-            }
-            if constexpr (std::is_base_of<clonable, T>::value) {
-                this->reset((T*)other->clone());
-            } else {
-                this->reset(new T(*other));
-            }
-            return *this;
-        }
+		clone_ptr& operator=(const clone_ptr& other) noexcept {
+			if (other.get() == nullptr) {
+				this->reset(nullptr);
+				return *this;
+				;
+			}
+			if constexpr (std::is_base_of<clonable, T>::value) {
+				this->reset((T*)other->clone());
+			} else {
+				this->reset(new T(*other));
+			}
+			return *this;
+		}
 
-        template <typename T2>
-        clone_ptr& operator=(const clone_ptr<T2>& other) noexcept {
-            if (other.get() == nullptr) {
-                this->reset(nullptr);
-                return *this;
-                ;
-            }
-            if constexpr (std::is_base_of<clonable, T>::value) {
-                this->reset((T*)other->clone());
-            } else {
-                this->reset(new T(*other));
-            }
-            return *this;
-        }
+		template <typename T2>
+		clone_ptr& operator=(const clone_ptr<T2>& other) noexcept {
+			if (other.get() == nullptr) {
+				this->reset(nullptr);
+				return *this;
+				;
+			}
+			if constexpr (std::is_base_of<clonable, T>::value) {
+				this->reset((T*)other->clone());
+			} else {
+				this->reset(new T(*other));
+			}
+			return *this;
+		}
 
-        clone_ptr& operator=(clone_ptr&& other) noexcept {
-            if (other.get() == nullptr) {
-                this->reset(nullptr);
-                return *this;
-                ;
-            }
-            if constexpr (std::is_base_of<clonable, T>::value) {
-                this->reset((T*)other->clone());
-            } else {
-                this->reset(new T(*other));
-            }
-            return *this;
-        }
+		clone_ptr& operator=(clone_ptr&& other) noexcept {
+			if (other.get() == nullptr) {
+				this->reset(nullptr);
+				return *this;
+				;
+			}
+			if constexpr (std::is_base_of<clonable, T>::value) {
+				this->reset((T*)other->clone());
+			} else {
+				this->reset(new T(*other));
+			}
+			return *this;
+		}
 
-        template <typename T2>
-        clone_ptr& operator=(clone_ptr<T2>&& other) noexcept {
-            if (other.get() == nullptr) {
-                this->reset(nullptr);
-                return *this;
-                ;
-            }
-            if constexpr (std::is_base_of<clonable, T>::value) {
-                this->reset((T*)other->clone());
-            } else {
-                this->reset(new T(*other));
-            }
-            return *this;
-        }
+		template <typename T2>
+		clone_ptr& operator=(clone_ptr<T2>&& other) noexcept {
+			if (other.get() == nullptr) {
+				this->reset(nullptr);
+				return *this;
+				;
+			}
+			if constexpr (std::is_base_of<clonable, T>::value) {
+				this->reset((T*)other->clone());
+			} else {
+				this->reset(new T(*other));
+			}
+			return *this;
+		}
 
-        clone_ptr& operator=(const T& other) noexcept {
-            if constexpr (std::is_base_of<clonable, T>::value) {
-                this->reset((T*)other.clone());
-            } else {
-                this->reset(new T(other));
-            }
-            return *this;
-        }
+		clone_ptr& operator=(const T& other) noexcept {
+			if constexpr (std::is_base_of<clonable, T>::value) {
+				this->reset((T*)other.clone());
+			} else {
+				this->reset(new T(other));
+			}
+			return *this;
+		}
 
-        clone_ptr& operator=(T&& other) noexcept {
-            if constexpr (std::is_base_of<clonable, T>::value) {
-                this->reset((T*)other.clone());
-            } else {
-                this->reset(new T(other));
-            }
-            return *this;
-        }
+		clone_ptr& operator=(T&& other) noexcept {
+			if constexpr (std::is_base_of<clonable, T>::value) {
+				this->reset((T*)other.clone());
+			} else {
+				this->reset(new T(other));
+			}
+			return *this;
+		}
 
-        clone_ptr& operator=(T* other) noexcept {
-            this->reset(other);
-            return *this;
-        }
+		clone_ptr& operator=(T* other) noexcept {
+			this->reset(other);
+			return *this;
+		}
 
-        template <
-            typename... Args,
-            typename = decltype(typename std::remove_all_extents<T>::type(std::declval<Args>()...))>
-        clone_ptr(Args&&... params) : Parent(new T(std::forward<Args>(params)...)) {}
+		template <
+			typename... Args,
+			typename = decltype(typename std::remove_all_extents<T>::type(std::declval<Args>()...))>
+		clone_ptr(Args&&... params) : Parent(new T(std::forward<Args>(params)...)) {}
 
-        /////////ITERATOR FORWARDING/////////
+		/////////ITERATOR FORWARDING/////////
 
-        decltype(auto) begin() { return this->get()->begin(); }
-        decltype(auto) begin() const { this->get()->begin(); }
-        decltype(auto) end() { return this->get()->end(); }
-        decltype(auto) end() const { return this->get()->end(); }
+		decltype(auto) begin() { return this->get()->begin(); }
+		decltype(auto) begin() const { this->get()->begin(); }
+		decltype(auto) end() { return this->get()->end(); }
+		decltype(auto) end() const { return this->get()->end(); }
 
-        /////////OPERATOR FORWARDING/////////
+		/////////OPERATOR FORWARDING/////////
 
-        template <typename T2>
-        decltype(auto) operator[](T2 i) const {
-            if constexpr (!std::is_array<T>::value) {
-                return (*this->get())[i];
-            } else {
-                return (this->get())[i];
-            }
-        }
+		template <typename T2>
+		decltype(auto) operator[](T2 i) const {
+			if constexpr (!std::is_array<T>::value) {
+				return (*this->get())[i];
+			} else {
+				return (this->get())[i];
+			}
+		}
 
-        DEFINE_BIN_OP(+)
-        DEFINE_BIN_OP(-)
-        DEFINE_BIN_OP(*)
-        DEFINE_BIN_OP(/)
-        DEFINE_BIN_OP(%)
-        DEFINE_BIN_OP(^)
-        DEFINE_BIN_OP(&)
-        DEFINE_BIN_OP(|)
-        DEFINE_BIN_OP(<)
-        DEFINE_BIN_OP(>)
+		DEFINE_BIN_OP(+)
+		DEFINE_BIN_OP(-)
+		DEFINE_BIN_OP(*)
+		DEFINE_BIN_OP(/)
+		DEFINE_BIN_OP(%)
+		DEFINE_BIN_OP(^)
+		DEFINE_BIN_OP(&)
+		DEFINE_BIN_OP(|)
+		DEFINE_BIN_OP(<)
+		DEFINE_BIN_OP(>)
 
-        DEFINE_BIN_OP(+=)
-        DEFINE_BIN_OP(-=)
-        DEFINE_BIN_OP(*=)
-        DEFINE_BIN_OP(/=)
-        DEFINE_BIN_OP(%=)
-        DEFINE_BIN_OP(^=)
-        DEFINE_BIN_OP(&=)
-        DEFINE_BIN_OP(|=)
+		DEFINE_BIN_OP(+=)
+		DEFINE_BIN_OP(-=)
+		DEFINE_BIN_OP(*=)
+		DEFINE_BIN_OP(/=)
+		DEFINE_BIN_OP(%=)
+		DEFINE_BIN_OP(^=)
+		DEFINE_BIN_OP(&=)
+		DEFINE_BIN_OP(|=)
 
-        DEFINE_BIN_OP(<<)
-        DEFINE_BIN_OP(>>)
-        DEFINE_BIN_OP(<<=)
-        DEFINE_BIN_OP(>>=)
+		DEFINE_BIN_OP(<<)
+		DEFINE_BIN_OP(>>)
+		DEFINE_BIN_OP(<<=)
+		DEFINE_BIN_OP(>>=)
 
-        DEFINE_BIN_OP(==)
-        DEFINE_BIN_OP(!=)
+		DEFINE_BIN_OP(==)
+		DEFINE_BIN_OP(!=)
 
-        DEFINE_BIN_OP(<=)
-        DEFINE_BIN_OP(>=)
+		DEFINE_BIN_OP(<=)
+		DEFINE_BIN_OP(>=)
 
-        DEFINE_BIN_OP(&&)
-        DEFINE_BIN_OP(||)
+		DEFINE_BIN_OP(&&)
+		DEFINE_BIN_OP(||)
 
-        DEFINE_UNARY_OP(~)
-        DEFINE_UNARY_OP(!)
+		DEFINE_UNARY_OP(~)
+		DEFINE_UNARY_OP(!)
 
-        DEFINE_POST_OP(++)
-        DEFINE_POST_OP(--)
+		DEFINE_POST_OP(++)
+		DEFINE_POST_OP(--)
 
-        DEFINE_PRE_OP(++)
-        DEFINE_PRE_OP(--)
+		DEFINE_PRE_OP(++)
+		DEFINE_PRE_OP(--)
 
-        template <typename T2>
-        decltype(auto) operator,(const T2& other) {
-            return (*(this->get())), other;
-        }
+		template <typename T2>
+		decltype(auto) operator,(const T2& other) {
+			return (*(this->get())), other;
+		}
 
-        template <typename T2>
-        decltype(auto) operator,(T2&& other) {
-            return (*(this->get())), other;
-        }
+		template <typename T2>
+		decltype(auto) operator,(T2&& other) {
+			return (*(this->get())), other;
+		}
 
-        template <typename... Args>
-        decltype(auto) operator()(Args&&... params) {
-            (*(this->get()))(std::forward<Args>(params)...);
-        }
+		template <typename... Args>
+		decltype(auto) operator()(Args&&... params) {
+			(*(this->get()))(std::forward<Args>(params)...);
+		}
 
-        T& operator*() const { return *(this->get()); }
+		T& operator*() { return *(this->get()); }
 
-        bool operator==(std::nullptr_t) { return this->get() == nullptr; }
-        bool operator!=(std::nullptr_t) { return this->get() != nullptr; }
-
-#if __cplusplus >= 202002L
-        DEFINE_BIN_OP(<=>)
-#endif
-    };
-
-
-    // Literally the same as a shared pointer, but it forwards operators and has a forwarding constructor
-    template <typename T>
-    class joint_ptr : public std::shared_ptr<T> {
-        using Parent = std::shared_ptr<T>;
-
-    public:
-        using std::shared_ptr<T>::shared_ptr;
-
-        template <
-            typename... Args,
-            typename = decltype(typename std::remove_all_extents<T>::type(std::declval<Args>()...))>
-        joint_ptr(Args&&... params) :
-            Parent(new T(std::forward<Args>(params)...)) {} //std::static_assert(!std::is_array<T>::value, "HAHAH")
-
-        /////////ITERATOR FORWARDING/////////
-
-        decltype(auto) begin() { return this->get()->begin(); }
-        decltype(auto) begin() const { this->get()->begin(); }
-        decltype(auto) end() { return this->get()->end(); }
-        decltype(auto) end() const { return this->get()->end(); }
-
-        /////////OPERATOR FORWARDING/////////
-
-        template <typename T2>
-        decltype(auto) operator[](T2 i) const {
-            if constexpr (!std::is_array<T>::value) {
-                return (*this->get())[i];
-            } else {
-                return (this->get())[i];
-            }
-        }
-
-        DEFINE_BIN_OP(+)
-        DEFINE_BIN_OP(-)
-        DEFINE_BIN_OP(*)
-        DEFINE_BIN_OP(/)
-        DEFINE_BIN_OP(%)
-        DEFINE_BIN_OP(^)
-        DEFINE_BIN_OP(&)
-        DEFINE_BIN_OP(|)
-        DEFINE_BIN_OP(<)
-        DEFINE_BIN_OP(>)
-
-        DEFINE_BIN_OP(+=)
-        DEFINE_BIN_OP(-=)
-        DEFINE_BIN_OP(*=)
-        DEFINE_BIN_OP(/=)
-        DEFINE_BIN_OP(%=)
-        DEFINE_BIN_OP(^=)
-        DEFINE_BIN_OP(&=)
-        DEFINE_BIN_OP(|=)
-
-        DEFINE_BIN_OP(<<)
-        DEFINE_BIN_OP(>>)
-        DEFINE_BIN_OP(<<=)
-        DEFINE_BIN_OP(>>=)
-
-        DEFINE_BIN_OP(==)
-        DEFINE_BIN_OP(!=)
-
-        DEFINE_BIN_OP(<=)
-        DEFINE_BIN_OP(>=)
-
-        DEFINE_BIN_OP(&&)
-        DEFINE_BIN_OP(||)
-
-        DEFINE_UNARY_OP(~)
-        DEFINE_UNARY_OP(!)
-
-        DEFINE_POST_OP(++)
-        DEFINE_POST_OP(--)
-
-        DEFINE_PRE_OP(++)
-        DEFINE_PRE_OP(--)
-
-        template <typename T2>
-        decltype(auto) operator,(const T2& other) {
-            return (*(this->get())), other;
-        }
-
-        template <typename T2>
-        decltype(auto) operator,(T2&& other) {
-            return (*(this->get())), other;
-        }
-
-        template <typename... Args>
-        decltype(auto) operator()(Args&&... params) {
-            (*(this->get()))(std::forward<Args>(params)...);
-        }
-
-        T& operator*() const { return *(this->get()); }
-
-        bool operator==(std::nullptr_t) { return this->get() == nullptr; }
-        bool operator!=(std::nullptr_t) { return this->get() != nullptr; }
+		bool operator==(std::nullptr_t) { return this->get() == nullptr; }
+		bool operator!=(std::nullptr_t) { return this->get() != nullptr; }
 
 #if __cplusplus >= 202002L
-        DEFINE_BIN_OP(<=>)
+		DEFINE_BIN_OP(<=>)
 #endif
-    };
+	};
+
+
+	// Literally the same as a shared pointer, but it forwards operators and has a forwarding constructor
+	template <typename T>
+	class joint_ptr : public std::shared_ptr<T> {
+		using Parent = std::shared_ptr<T>;
+
+	public:
+		using std::shared_ptr<T>::shared_ptr;
+
+		template <
+			typename... Args,
+			typename = decltype(typename std::remove_all_extents<T>::type(std::declval<Args>()...))>
+		joint_ptr(Args&&... params) :
+			Parent(new T(std::forward<Args>(params)...)) {}
+
+		/////////ITERATOR FORWARDING/////////
+
+		decltype(auto) begin() { return this->get()->begin(); }
+		decltype(auto) begin() const { this->get()->begin(); }
+		decltype(auto) end() { return this->get()->end(); }
+		decltype(auto) end() const { return this->get()->end(); }
+
+		/////////OPERATOR FORWARDING/////////
+
+		template <typename T2>
+		decltype(auto) operator[](T2 i) const {
+			if constexpr (!std::is_array<T>::value) {
+				return (*this->get())[i];
+			} else {
+				return (this->get())[i];
+			}
+		}
+
+		DEFINE_BIN_OP(+)
+		DEFINE_BIN_OP(-)
+		DEFINE_BIN_OP(*)
+		DEFINE_BIN_OP(/)
+		DEFINE_BIN_OP(%)
+		DEFINE_BIN_OP(^)
+		DEFINE_BIN_OP(&)
+		DEFINE_BIN_OP(|)
+		DEFINE_BIN_OP(<)
+		DEFINE_BIN_OP(>)
+
+		DEFINE_BIN_OP(+=)
+		DEFINE_BIN_OP(-=)
+		DEFINE_BIN_OP(*=)
+		DEFINE_BIN_OP(/=)
+		DEFINE_BIN_OP(%=)
+		DEFINE_BIN_OP(^=)
+		DEFINE_BIN_OP(&=)
+		DEFINE_BIN_OP(|=)
+
+		DEFINE_BIN_OP(<<)
+		DEFINE_BIN_OP(>>)
+		DEFINE_BIN_OP(<<=)
+		DEFINE_BIN_OP(>>=)
+
+		DEFINE_BIN_OP(==)
+		DEFINE_BIN_OP(!=)
+
+		DEFINE_BIN_OP(<=)
+		DEFINE_BIN_OP(>=)
+
+		DEFINE_BIN_OP(&&)
+		DEFINE_BIN_OP(||)
+
+		DEFINE_UNARY_OP(~)
+		DEFINE_UNARY_OP(!)
+
+		DEFINE_POST_OP(++)
+		DEFINE_POST_OP(--)
+
+		DEFINE_PRE_OP(++)
+		DEFINE_PRE_OP(--)
+
+		template <typename T2>
+		decltype(auto) operator,(const T2& other) {
+			return (*(this->get())), other;
+		}
+
+		template <typename T2>
+		decltype(auto) operator,(T2&& other) {
+			return (*(this->get())), other;
+		}
+
+		template <typename... Args>
+		decltype(auto) operator()(Args&&... params) {
+			(*(this->get()))(std::forward<Args>(params)...);
+		}
+
+		T& operator*() { return *(this->get()); }
+
+		bool operator==(std::nullptr_t) { return this->get() == nullptr; }
+		bool operator!=(std::nullptr_t) { return this->get() != nullptr; }
+
+#if __cplusplus >= 202002L
+		DEFINE_BIN_OP(<=>)
+#endif
+	};
+
+	template <typename T>
+	class optional_ptr : public std::optional<T> {
+		using Parent = std::optional<T>;
+
+	public:
+		using std::optional<T>::optional;
+
+		template <
+			typename... Args,
+			typename = decltype(typename std::remove_all_extents<T>::type(std::declval<Args>()...))>
+		optional_ptr(Args&&... params) :
+			Parent(new T(std::forward<Args>(params)...)) {}
+
+        inline T* get(){
+            if(Parent::has_value()) return &(Parent::value());
+            return nullptr;
+        }
+
+		/////////ITERATOR FORWARDING/////////
+
+		decltype(auto) begin() { return this->get()->begin(); }
+		decltype(auto) begin() const { this->get()->begin(); }
+		decltype(auto) end() { return this->get()->end(); }
+		decltype(auto) end() const { return this->get()->end(); }
+
+		/////////OPERATOR FORWARDING/////////
+
+		template <typename T2>
+		decltype(auto) operator[](T2 i) const {
+			if constexpr (!std::is_array<T>::value) {
+				return (*this->get())[i];
+			} else {
+				return (this->get())[i];
+			}
+		}
+
+		DEFINE_BIN_OP(+)
+		DEFINE_BIN_OP(-)
+		DEFINE_BIN_OP(*)
+		DEFINE_BIN_OP(/)
+		DEFINE_BIN_OP(%)
+		DEFINE_BIN_OP(^)
+		DEFINE_BIN_OP(&)
+		DEFINE_BIN_OP(|)
+		DEFINE_BIN_OP(<)
+		DEFINE_BIN_OP(>)
+
+		DEFINE_BIN_OP(+=)
+		DEFINE_BIN_OP(-=)
+		DEFINE_BIN_OP(*=)
+		DEFINE_BIN_OP(/=)
+		DEFINE_BIN_OP(%=)
+		DEFINE_BIN_OP(^=)
+		DEFINE_BIN_OP(&=)
+		DEFINE_BIN_OP(|=)
+
+		DEFINE_BIN_OP(<<)
+		DEFINE_BIN_OP(>>)
+		DEFINE_BIN_OP(<<=)
+		DEFINE_BIN_OP(>>=)
+
+		DEFINE_BIN_OP(==)
+		DEFINE_BIN_OP(!=)
+
+		DEFINE_BIN_OP(<=)
+		DEFINE_BIN_OP(>=)
+
+		DEFINE_BIN_OP(&&)
+		DEFINE_BIN_OP(||)
+
+		DEFINE_UNARY_OP(~)
+		DEFINE_UNARY_OP(!)
+
+		DEFINE_POST_OP(++)
+		DEFINE_POST_OP(--)
+
+		DEFINE_PRE_OP(++)
+		DEFINE_PRE_OP(--)
+
+		template <typename T2>
+		decltype(auto) operator,(const T2& other) {
+			return (*(this->get())), other;
+		}
+
+		template <typename T2>
+		decltype(auto) operator,(T2&& other) {
+			return (*(this->get())), other;
+		}
+
+		template <typename... Args>
+		decltype(auto) operator()(Args&&... params) {
+			(*(this->get()))(std::forward<Args>(params)...);
+		}
+
+		T& operator*() { return Parent::value(); }
+
+		bool operator==(std::nullptr_t) { return this->get() == nullptr; }
+		bool operator!=(std::nullptr_t) { return this->get() != nullptr; }
+
+#if __cplusplus >= 202002L
+		DEFINE_BIN_OP(<=>)
+#endif
+	};
 
     namespace shortnames {
+		template <typename T>
+		using cptr = clone_ptr<T>;
+		template <typename T>
+		using jptr = joint_ptr<T>;
         template <typename T>
-        using cptr = clone_ptr<T>;
-        template <typename T>
-        using jptr = joint_ptr<T>;
-    }; // namespace shortnames
-
-}; // namespace estd
+		using optr = optional_ptr<T>;
+	};// namespace shortnames
+};// namespace estd
 
 #undef DEFINE_PRE_OP
 #undef DEFINE_POST_OP
