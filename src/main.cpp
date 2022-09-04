@@ -64,7 +64,7 @@ struct TypeB : public TypeA {
 };
 
 int main() {
-    optr<int> it = 1;
+    sptr<int> it = 1;
     it += 1;
     std::cout << (*it) << std::endl;
 

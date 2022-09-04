@@ -436,7 +436,7 @@ namespace estd {
 	};
 
 	template <typename T>
-	class optional_ptr : public std::optional<T> {
+	class stack_ptr : public std::optional<T> {
 		using Parent = std::optional<T>;
 
 	public:
@@ -445,7 +445,7 @@ namespace estd {
 		template <
 			typename... Args,
 			typename = decltype(typename std::remove_all_extents<T>::type(std::declval<Args>()...))>
-		optional_ptr(Args&&... params) :
+		stack_ptr(Args&&... params) :
 			Parent(new T(std::forward<Args>(params)...)) {}
 
         inline T* get() const{
@@ -545,7 +545,7 @@ namespace estd {
 		template <typename T>
 		using jptr = joint_ptr<T>;
         template <typename T>
-		using optr = optional_ptr<T>;
+		using sptr = stack_ptr<T>;
 	};// namespace shortnames
 };// namespace estd
 
