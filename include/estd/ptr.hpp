@@ -37,38 +37,38 @@
 #define DEFINE_BIN_OP(OPT)                                                                                             \
 	template <typename T2>                                                                                             \
 	decltype(auto) operator OPT(const T2& other) {                                                                     \
-		return (*(this->get()))OPT other;                                                                              \
+		return this->value() OPT other;                                                                                \
 	}                                                                                                                  \
 	template <typename T2>                                                                                             \
 	decltype(auto) operator OPT(T2&& other) {                                                                          \
-		return (*(this->get()))OPT other;                                                                              \
+		return this->value() OPT other;                                                                                \
 	}                                                                                                                  \
 	template <typename T2>                                                                                             \
 	decltype(auto) operator OPT(const clone_ptr<T2>& other) {                                                          \
-		return (*(this->get()))OPT(*(other.get()));                                                                    \
+		return this->value() OPT other.value();                                                                        \
 	}                                                                                                                  \
 	template <typename T2>                                                                                             \
 	decltype(auto) operator OPT(clone_ptr<T2>&& other) {                                                               \
-		return (*(this->get()))OPT(*(other.get()));                                                                    \
+		return this->value() OPT other.value();                                                                        \
 	}
 
 
 #define DEFINE_PRE_OP(OPT)                                                                                             \
 	template <typename T2>                                                                                             \
 	decltype(auto) operator OPT(int) {                                                                                 \
-		return OPT(*(this->get()));                                                                                    \
+		return OPT this->value();                                                                                      \
 	}
 
 #define DEFINE_POST_OP(OPT)                                                                                            \
 	template <typename T2>                                                                                             \
 	decltype(auto) operator OPT() {                                                                                    \
-		return (*(this->get()))OPT;                                                                                    \
+		return this->value() OPT;                                                                                      \
 	}
 
 #define DEFINE_UNARY_OP(OPT)                                                                                           \
 	template <typename T2>                                                                                             \
 	decltype(auto) operator OPT() {                                                                                    \
-		return OPT(*(this->get()));                                                                                    \
+		return OPT this->value();                                                                                      \
 	}
 
 
@@ -91,6 +91,13 @@ namespace estd {
 
 	public:
 		using std::unique_ptr<T>::unique_ptr;
+
+		inline T& has_value() const { return this->get() != nullptr; }
+
+		inline T& value() const {
+			if (this->get() == nullptr) throw std::runtime_error("getting the value of nullptr");
+			return *(this->get());
+		}
 
 		clone_ptr() {}
 
@@ -250,17 +257,17 @@ namespace estd {
 
 		/////////ITERATOR FORWARDING/////////
 
-		decltype(auto) begin() { return this->get()->begin(); }
-		decltype(auto) begin() const { this->get()->begin(); }
-		decltype(auto) end() { return this->get()->end(); }
-		decltype(auto) end() const { return this->get()->end(); }
+		decltype(auto) begin() { return this->value().begin(); }
+		decltype(auto) begin() const { this->value().begin(); }
+		decltype(auto) end() { return this->value().end(); }
+		decltype(auto) end() const { return this->value().end(); }
 
 		/////////OPERATOR FORWARDING/////////
 
 		template <typename T2>
 		decltype(auto) operator[](T2 i) const {
 			if constexpr (!std::is_array<T>::value) {
-				return (*this->get())[i];
+				return this->value()[i];
 			} else {
 				return (this->get())[i];
 			}
@@ -311,20 +318,20 @@ namespace estd {
 
 		template <typename T2>
 		decltype(auto) operator,(const T2& other) {
-			return (*(this->get())), other;
+			return (this->value()), other;
 		}
 
 		template <typename T2>
 		decltype(auto) operator,(T2&& other) {
-			return (*(this->get())), other;
+			return (this->value()), other;
 		}
 
 		template <typename... Args>
 		decltype(auto) operator()(Args&&... params) {
-			(*(this->get()))(std::forward<Args>(params)...);
+			(this->value())(std::forward<Args>(params)...);
 		}
 
-		T& operator*() const { return *(this->get()); }
+		T& operator*() const { return this->value(); }
 
 		bool operator==(std::nullptr_t) { return this->get() == nullptr; }
 		bool operator!=(std::nullptr_t) { return this->get() != nullptr; }
@@ -346,22 +353,28 @@ namespace estd {
 		template <
 			typename... Args,
 			typename = decltype(typename std::remove_all_extents<T>::type(std::declval<Args>()...))>
-		joint_ptr(Args&&... params) :
-			Parent(new T(std::forward<Args>(params)...)) {}
+		joint_ptr(Args&&... params) : Parent(new T(std::forward<Args>(params)...)) {}
+
+		inline T& has_value() const { return this->get() != nullptr; }
+
+		inline T& value() const {
+			if (this->get() == nullptr) throw std::runtime_error("getting the value of nullptr");
+			return *(this->get());
+		}
 
 		/////////ITERATOR FORWARDING/////////
 
-		decltype(auto) begin() { return this->get()->begin(); }
-		decltype(auto) begin() const { this->get()->begin(); }
-		decltype(auto) end() { return this->get()->end(); }
-		decltype(auto) end() const { return this->get()->end(); }
+		decltype(auto) begin() { return this->value().begin(); }
+		decltype(auto) begin() const { this->value().begin(); }
+		decltype(auto) end() { return this->value().end(); }
+		decltype(auto) end() const { return this->value().end(); }
 
 		/////////OPERATOR FORWARDING/////////
 
 		template <typename T2>
 		decltype(auto) operator[](T2 i) const {
 			if constexpr (!std::is_array<T>::value) {
-				return (*this->get())[i];
+				return this->value()[i];
 			} else {
 				return (this->get())[i];
 			}
@@ -412,20 +425,20 @@ namespace estd {
 
 		template <typename T2>
 		decltype(auto) operator,(const T2& other) {
-			return (*(this->get())), other;
+			return (this->value()), other;
 		}
 
 		template <typename T2>
 		decltype(auto) operator,(T2&& other) {
-			return (*(this->get())), other;
+			return (this->value()), other;
 		}
 
 		template <typename... Args>
 		decltype(auto) operator()(Args&&... params) {
-			(*(this->get()))(std::forward<Args>(params)...);
+			(this->value())(std::forward<Args>(params)...);
 		}
 
-		T& operator*() const { return *(this->get()); }
+		T& operator*() const { return this->value(); }
 
 		bool operator==(std::nullptr_t) { return this->get() == nullptr; }
 		bool operator!=(std::nullptr_t) { return this->get() != nullptr; }
@@ -445,27 +458,26 @@ namespace estd {
 		template <
 			typename... Args,
 			typename = decltype(typename std::remove_all_extents<T>::type(std::declval<Args>()...))>
-		stack_ptr(Args&&... params) :
-			Parent(T(std::forward<Args>(params)...)) {}
+		stack_ptr(Args&&... params) : Parent(T(std::forward<Args>(params)...)) {}
 
-        inline T* get() const{
-            if(Parent::has_value()) return const_cast<T*>(&(Parent::value()));
-            return nullptr;
-        }
+		inline T* get() const {
+			if (Parent::has_value()) return const_cast<T*>(&(Parent::value()));
+			return nullptr;
+		}
 
 		/////////ITERATOR FORWARDING/////////
 
-		decltype(auto) begin() { return this->get()->begin(); }
-		decltype(auto) begin() const { this->get()->begin(); }
-		decltype(auto) end() { return this->get()->end(); }
-		decltype(auto) end() const { return this->get()->end(); }
+		decltype(auto) begin() { return this->value().begin(); }
+		decltype(auto) begin() const { this->value().begin(); }
+		decltype(auto) end() { return this->value().end(); }
+		decltype(auto) end() const { return this->value().end(); }
 
 		/////////OPERATOR FORWARDING/////////
 
 		template <typename T2>
 		decltype(auto) operator[](T2 i) const {
 			if constexpr (!std::is_array<T>::value) {
-				return (*this->get())[i];
+				return this->value()[i];
 			} else {
 				return (this->get())[i];
 			}
@@ -516,17 +528,17 @@ namespace estd {
 
 		template <typename T2>
 		decltype(auto) operator,(const T2& other) {
-			return (*(this->get())), other;
+			return (this->value()), other;
 		}
 
 		template <typename T2>
 		decltype(auto) operator,(T2&& other) {
-			return (*(this->get())), other;
+			return (this->value()), other;
 		}
 
 		template <typename... Args>
 		decltype(auto) operator()(Args&&... params) {
-			(*(this->get()))(std::forward<Args>(params)...);
+			(this->value())(std::forward<Args>(params)...);
 		}
 
 		T& operator*() const { return *(this->get()); }
@@ -539,15 +551,15 @@ namespace estd {
 #endif
 	};
 
-    namespace shortnames {
+	namespace shortnames {
 		template <typename T>
 		using cptr = clone_ptr<T>;
 		template <typename T>
 		using jptr = joint_ptr<T>;
-        template <typename T>
+		template <typename T>
 		using sptr = stack_ptr<T>;
 	};// namespace shortnames
-};// namespace estd
+};	  // namespace estd
 
 #undef DEFINE_PRE_OP
 #undef DEFINE_POST_OP
