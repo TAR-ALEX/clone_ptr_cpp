@@ -446,7 +446,7 @@ namespace estd {
 			typename... Args,
 			typename = decltype(typename std::remove_all_extents<T>::type(std::declval<Args>()...))>
 		stack_ptr(Args&&... params) :
-			Parent(new T(std::forward<Args>(params)...)) {}
+			Parent(T(std::forward<Args>(params)...)) {}
 
         inline T* get() const{
             if(Parent::has_value()) return const_cast<T*>(&(Parent::value()));
