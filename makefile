@@ -54,8 +54,22 @@ DEBUG_OBJECTS := $(SOURCES:%=$(BUILD_DIR)/%.d.o)
 
 TARGET=example
 
-# all: $(TARGET)
+.PHONY : nomacros
+
 all: release
+
+nomacros: 
+	$(MKDIR_P) ./nomacros/include/estd/
+    # you must install clang-format (sudo apt install clang-format)
+	{ \
+	echo '/*\n\n\nTHIS IS AN AUTO GENERATED FILE FROM MACRO EXPANSION, DO NOT EDIT, CHANGE THE ORIGINAL\n\n'; \
+	cat LICENSE;  echo '*/\n'; \
+	echo '#pragma once\n'; \
+	grep '#include' ./include/estd/ptr.hpp; \
+	echo ; \
+	grep -v '#include' ./include/estd/ptr.hpp | grep -v '#pragma once' | g++ -xc++ - -E -std=c++17 | grep -v '#' \
+	| clang-format --style Google; \
+	} | tr "" "" > ./nomacros/include/estd/ptr.hpp
 
 gprof:
 	gprof $(TARGET)_DEBUG gmon.out  >output.txt

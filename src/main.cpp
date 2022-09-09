@@ -28,6 +28,7 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+// #include "../nomacros/include/estd/ptr.hpp"
 #include <estd/ptr.hpp>
 #include <iostream>
 #include <vector>
@@ -85,10 +86,12 @@ int main() {
 	estd::joint_ptr<int> j = i;
 	estd::joint_ptr<int> k;
 
+    estd::view_joint_ptr<int> vjp = i;
+
 	i += 4;
 	std::cout << (*j) << std::endl;
 
-	std::cout << (i == nullptr) << std::endl;
+	std::cout << (vjp.lock() == nullptr) << std::endl;
 	std::cout << (j == nullptr) << std::endl;
 	std::cout << (k == nullptr) << std::endl<< std::endl;
 
