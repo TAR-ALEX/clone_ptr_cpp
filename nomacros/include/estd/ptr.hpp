@@ -1815,8 +1815,7 @@ class view_joint_ptr : public std::weak_ptr<T> {
 
  public:
   using std::weak_ptr<T>::weak_ptr;
-
-  joint_ptr<T> lock() { return Parent::lock(); }
+  joint_ptr<T> lock() const noexcept { return Parent::lock(); }
 };
 
 template <typename T>
