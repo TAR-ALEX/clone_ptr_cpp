@@ -36,6 +36,8 @@ Why would you want to use this? For operator forwarding features (will not do po
 
 ## Other notes
 
+operator == is not forwarder, the values of the pointers will be compared instead.
+
 NONE of these should work with C style arrays, they will work with c++ std::array instead.
 
 There is a version that contains no macros in the `nomacros` directory. To build this version you must have clang-format installed and run on a unix with utilities such as grep. run `make nomacros` to update this library

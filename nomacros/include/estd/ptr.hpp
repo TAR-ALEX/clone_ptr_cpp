@@ -101,7 +101,7 @@ class clone_ptr : public std::unique_ptr<T> {
                 std::declval<Args>()...))>
   clone_ptr(Args&&... params) : Parent(new T(std::forward<Args>(params)...)) {}
 
-  clone_ptr() {}
+  clone_ptr() { reset(nullptr); }
   clone_ptr(std::nullptr_t) { reset(nullptr); }
   clone_ptr(T* other) { reset(other); }
   clone_ptr(const clone_ptr& other) { reset(other); }
@@ -502,38 +502,6 @@ class clone_ptr : public std::unique_ptr<T> {
     return this->value() >>= other.value();
   }
   template <typename T2>
-  decltype(auto) operator==(const T2& other) {
-    return this->value() == other;
-  }
-  template <typename T2>
-  decltype(auto) operator==(T2&& other) {
-    return this->value() == other;
-  }
-  template <typename T2>
-  decltype(auto) operator==(const clone_ptr<T2>& other) {
-    return this->value() == other.value();
-  }
-  template <typename T2>
-  decltype(auto) operator==(clone_ptr<T2>&& other) {
-    return this->value() == other.value();
-  }
-  template <typename T2>
-  decltype(auto) operator!=(const T2& other) {
-    return this->value() != other;
-  }
-  template <typename T2>
-  decltype(auto) operator!=(T2&& other) {
-    return this->value() != other;
-  }
-  template <typename T2>
-  decltype(auto) operator!=(const clone_ptr<T2>& other) {
-    return this->value() != other.value();
-  }
-  template <typename T2>
-  decltype(auto) operator!=(clone_ptr<T2>&& other) {
-    return this->value() != other.value();
-  }
-  template <typename T2>
   decltype(auto) operator<=(const T2& other) {
     return this->value() <= other;
   }
@@ -634,7 +602,22 @@ class clone_ptr : public std::unique_ptr<T> {
     (this->value())(std::forward<Args>(params)...);
   }
   bool operator==(std::nullptr_t) { return this->get() == nullptr; }
-  bool operator!=(std::nullptr_t) { return this->get() != nullptr; }
+  template <typename T2>
+  decltype(auto) operator==(T2* other) {
+    return this->get() == other;
+  }
+  template <typename T2>
+  decltype(auto) operator==(const clone_ptr<T2>& other) {
+    return this->get() == other.get();
+  }
+  template <typename T2>
+  decltype(auto) operator==(clone_ptr<T2>&& other) {
+    return this->get() == other.get();
+  }
+  template <typename T2>
+  bool operator!=(T2 other) {
+    return !(operator==(other));
+  }
   inline explicit operator bool() const noexcept {
     return this->get() != nullptr;
   }
@@ -645,6 +628,9 @@ class clone_ptr : public std::unique_ptr<T> {
 template <typename T>
 class joint_ptr : public std::shared_ptr<T> {
   using Parent = std::shared_ptr<T>;
+  static_assert(!std::is_array<T>::value,
+                "Error: joint_ptr not supported on raw arrays, they are not "
+                "easily copyable.");
 
  public:
   template <typename... Args,
@@ -688,7 +674,7 @@ class joint_ptr : public std::shared_ptr<T> {
     Parent::operator=(other);
   }
 
-  joint_ptr() {}
+  joint_ptr() { reset(nullptr); }
   joint_ptr(std::nullptr_t) { reset(nullptr); }
   joint_ptr(T* other) { reset(other); }
   joint_ptr(const joint_ptr& other) { reset(other); }
@@ -754,11 +740,11 @@ class joint_ptr : public std::shared_ptr<T> {
     return this->value() + other;
   }
   template <typename T2>
-  decltype(auto) operator+(const clone_ptr<T2>& other) {
+  decltype(auto) operator+(const joint_ptr<T2>& other) {
     return this->value() + other.value();
   }
   template <typename T2>
-  decltype(auto) operator+(clone_ptr<T2>&& other) {
+  decltype(auto) operator+(joint_ptr<T2>&& other) {
     return this->value() + other.value();
   }
   template <typename T2>
@@ -770,11 +756,11 @@ class joint_ptr : public std::shared_ptr<T> {
     return this->value() - other;
   }
   template <typename T2>
-  decltype(auto) operator-(const clone_ptr<T2>& other) {
+  decltype(auto) operator-(const joint_ptr<T2>& other) {
     return this->value() - other.value();
   }
   template <typename T2>
-  decltype(auto) operator-(clone_ptr<T2>&& other) {
+  decltype(auto) operator-(joint_ptr<T2>&& other) {
     return this->value() - other.value();
   }
   template <typename T2>
@@ -786,11 +772,11 @@ class joint_ptr : public std::shared_ptr<T> {
     return this->value() * other;
   }
   template <typename T2>
-  decltype(auto) operator*(const clone_ptr<T2>& other) {
+  decltype(auto) operator*(const joint_ptr<T2>& other) {
     return this->value() * other.value();
   }
   template <typename T2>
-  decltype(auto) operator*(clone_ptr<T2>&& other) {
+  decltype(auto) operator*(joint_ptr<T2>&& other) {
     return this->value() * other.value();
   }
   template <typename T2>
@@ -802,11 +788,11 @@ class joint_ptr : public std::shared_ptr<T> {
     return this->value() / other;
   }
   template <typename T2>
-  decltype(auto) operator/(const clone_ptr<T2>& other) {
+  decltype(auto) operator/(const joint_ptr<T2>& other) {
     return this->value() / other.value();
   }
   template <typename T2>
-  decltype(auto) operator/(clone_ptr<T2>&& other) {
+  decltype(auto) operator/(joint_ptr<T2>&& other) {
     return this->value() / other.value();
   }
   template <typename T2>
@@ -818,11 +804,11 @@ class joint_ptr : public std::shared_ptr<T> {
     return this->value() % other;
   }
   template <typename T2>
-  decltype(auto) operator%(const clone_ptr<T2>& other) {
+  decltype(auto) operator%(const joint_ptr<T2>& other) {
     return this->value() % other.value();
   }
   template <typename T2>
-  decltype(auto) operator%(clone_ptr<T2>&& other) {
+  decltype(auto) operator%(joint_ptr<T2>&& other) {
     return this->value() % other.value();
   }
   template <typename T2>
@@ -834,11 +820,11 @@ class joint_ptr : public std::shared_ptr<T> {
     return this->value() ^ other;
   }
   template <typename T2>
-  decltype(auto) operator^(const clone_ptr<T2>& other) {
+  decltype(auto) operator^(const joint_ptr<T2>& other) {
     return this->value() ^ other.value();
   }
   template <typename T2>
-  decltype(auto) operator^(clone_ptr<T2>&& other) {
+  decltype(auto) operator^(joint_ptr<T2>&& other) {
     return this->value() ^ other.value();
   }
   template <typename T2>
@@ -850,11 +836,11 @@ class joint_ptr : public std::shared_ptr<T> {
     return this->value() & other;
   }
   template <typename T2>
-  decltype(auto) operator&(const clone_ptr<T2>& other) {
+  decltype(auto) operator&(const joint_ptr<T2>& other) {
     return this->value() & other.value();
   }
   template <typename T2>
-  decltype(auto) operator&(clone_ptr<T2>&& other) {
+  decltype(auto) operator&(joint_ptr<T2>&& other) {
     return this->value() & other.value();
   }
   template <typename T2>
@@ -866,11 +852,11 @@ class joint_ptr : public std::shared_ptr<T> {
     return this->value() | other;
   }
   template <typename T2>
-  decltype(auto) operator|(const clone_ptr<T2>& other) {
+  decltype(auto) operator|(const joint_ptr<T2>& other) {
     return this->value() | other.value();
   }
   template <typename T2>
-  decltype(auto) operator|(clone_ptr<T2>&& other) {
+  decltype(auto) operator|(joint_ptr<T2>&& other) {
     return this->value() | other.value();
   }
   template <typename T2>
@@ -882,11 +868,11 @@ class joint_ptr : public std::shared_ptr<T> {
     return this->value() < other;
   }
   template <typename T2>
-  decltype(auto) operator<(const clone_ptr<T2>& other) {
+  decltype(auto) operator<(const joint_ptr<T2>& other) {
     return this->value() < other.value();
   }
   template <typename T2>
-  decltype(auto) operator<(clone_ptr<T2>&& other) {
+  decltype(auto) operator<(joint_ptr<T2>&& other) {
     return this->value() < other.value();
   }
   template <typename T2>
@@ -898,11 +884,11 @@ class joint_ptr : public std::shared_ptr<T> {
     return this->value() > other;
   }
   template <typename T2>
-  decltype(auto) operator>(const clone_ptr<T2>& other) {
+  decltype(auto) operator>(const joint_ptr<T2>& other) {
     return this->value() > other.value();
   }
   template <typename T2>
-  decltype(auto) operator>(clone_ptr<T2>&& other) {
+  decltype(auto) operator>(joint_ptr<T2>&& other) {
     return this->value() > other.value();
   }
   template <typename T2>
@@ -914,11 +900,11 @@ class joint_ptr : public std::shared_ptr<T> {
     return this->value() += other;
   }
   template <typename T2>
-  decltype(auto) operator+=(const clone_ptr<T2>& other) {
+  decltype(auto) operator+=(const joint_ptr<T2>& other) {
     return this->value() += other.value();
   }
   template <typename T2>
-  decltype(auto) operator+=(clone_ptr<T2>&& other) {
+  decltype(auto) operator+=(joint_ptr<T2>&& other) {
     return this->value() += other.value();
   }
   template <typename T2>
@@ -930,11 +916,11 @@ class joint_ptr : public std::shared_ptr<T> {
     return this->value() -= other;
   }
   template <typename T2>
-  decltype(auto) operator-=(const clone_ptr<T2>& other) {
+  decltype(auto) operator-=(const joint_ptr<T2>& other) {
     return this->value() -= other.value();
   }
   template <typename T2>
-  decltype(auto) operator-=(clone_ptr<T2>&& other) {
+  decltype(auto) operator-=(joint_ptr<T2>&& other) {
     return this->value() -= other.value();
   }
   template <typename T2>
@@ -946,11 +932,11 @@ class joint_ptr : public std::shared_ptr<T> {
     return this->value() *= other;
   }
   template <typename T2>
-  decltype(auto) operator*=(const clone_ptr<T2>& other) {
+  decltype(auto) operator*=(const joint_ptr<T2>& other) {
     return this->value() *= other.value();
   }
   template <typename T2>
-  decltype(auto) operator*=(clone_ptr<T2>&& other) {
+  decltype(auto) operator*=(joint_ptr<T2>&& other) {
     return this->value() *= other.value();
   }
   template <typename T2>
@@ -962,11 +948,11 @@ class joint_ptr : public std::shared_ptr<T> {
     return this->value() /= other;
   }
   template <typename T2>
-  decltype(auto) operator/=(const clone_ptr<T2>& other) {
+  decltype(auto) operator/=(const joint_ptr<T2>& other) {
     return this->value() /= other.value();
   }
   template <typename T2>
-  decltype(auto) operator/=(clone_ptr<T2>&& other) {
+  decltype(auto) operator/=(joint_ptr<T2>&& other) {
     return this->value() /= other.value();
   }
   template <typename T2>
@@ -978,11 +964,11 @@ class joint_ptr : public std::shared_ptr<T> {
     return this->value() %= other;
   }
   template <typename T2>
-  decltype(auto) operator%=(const clone_ptr<T2>& other) {
+  decltype(auto) operator%=(const joint_ptr<T2>& other) {
     return this->value() %= other.value();
   }
   template <typename T2>
-  decltype(auto) operator%=(clone_ptr<T2>&& other) {
+  decltype(auto) operator%=(joint_ptr<T2>&& other) {
     return this->value() %= other.value();
   }
   template <typename T2>
@@ -994,11 +980,11 @@ class joint_ptr : public std::shared_ptr<T> {
     return this->value() ^= other;
   }
   template <typename T2>
-  decltype(auto) operator^=(const clone_ptr<T2>& other) {
+  decltype(auto) operator^=(const joint_ptr<T2>& other) {
     return this->value() ^= other.value();
   }
   template <typename T2>
-  decltype(auto) operator^=(clone_ptr<T2>&& other) {
+  decltype(auto) operator^=(joint_ptr<T2>&& other) {
     return this->value() ^= other.value();
   }
   template <typename T2>
@@ -1010,11 +996,11 @@ class joint_ptr : public std::shared_ptr<T> {
     return this->value() &= other;
   }
   template <typename T2>
-  decltype(auto) operator&=(const clone_ptr<T2>& other) {
+  decltype(auto) operator&=(const joint_ptr<T2>& other) {
     return this->value() &= other.value();
   }
   template <typename T2>
-  decltype(auto) operator&=(clone_ptr<T2>&& other) {
+  decltype(auto) operator&=(joint_ptr<T2>&& other) {
     return this->value() &= other.value();
   }
   template <typename T2>
@@ -1026,11 +1012,11 @@ class joint_ptr : public std::shared_ptr<T> {
     return this->value() |= other;
   }
   template <typename T2>
-  decltype(auto) operator|=(const clone_ptr<T2>& other) {
+  decltype(auto) operator|=(const joint_ptr<T2>& other) {
     return this->value() |= other.value();
   }
   template <typename T2>
-  decltype(auto) operator|=(clone_ptr<T2>&& other) {
+  decltype(auto) operator|=(joint_ptr<T2>&& other) {
     return this->value() |= other.value();
   }
   template <typename T2>
@@ -1042,11 +1028,11 @@ class joint_ptr : public std::shared_ptr<T> {
     return this->value() << other;
   }
   template <typename T2>
-  decltype(auto) operator<<(const clone_ptr<T2>& other) {
+  decltype(auto) operator<<(const joint_ptr<T2>& other) {
     return this->value() << other.value();
   }
   template <typename T2>
-  decltype(auto) operator<<(clone_ptr<T2>&& other) {
+  decltype(auto) operator<<(joint_ptr<T2>&& other) {
     return this->value() << other.value();
   }
   template <typename T2>
@@ -1058,11 +1044,11 @@ class joint_ptr : public std::shared_ptr<T> {
     return this->value() >> other;
   }
   template <typename T2>
-  decltype(auto) operator>>(const clone_ptr<T2>& other) {
+  decltype(auto) operator>>(const joint_ptr<T2>& other) {
     return this->value() >> other.value();
   }
   template <typename T2>
-  decltype(auto) operator>>(clone_ptr<T2>&& other) {
+  decltype(auto) operator>>(joint_ptr<T2>&& other) {
     return this->value() >> other.value();
   }
   template <typename T2>
@@ -1074,11 +1060,11 @@ class joint_ptr : public std::shared_ptr<T> {
     return this->value() <<= other;
   }
   template <typename T2>
-  decltype(auto) operator<<=(const clone_ptr<T2>& other) {
+  decltype(auto) operator<<=(const joint_ptr<T2>& other) {
     return this->value() <<= other.value();
   }
   template <typename T2>
-  decltype(auto) operator<<=(clone_ptr<T2>&& other) {
+  decltype(auto) operator<<=(joint_ptr<T2>&& other) {
     return this->value() <<= other.value();
   }
   template <typename T2>
@@ -1090,44 +1076,12 @@ class joint_ptr : public std::shared_ptr<T> {
     return this->value() >>= other;
   }
   template <typename T2>
-  decltype(auto) operator>>=(const clone_ptr<T2>& other) {
+  decltype(auto) operator>>=(const joint_ptr<T2>& other) {
     return this->value() >>= other.value();
   }
   template <typename T2>
-  decltype(auto) operator>>=(clone_ptr<T2>&& other) {
+  decltype(auto) operator>>=(joint_ptr<T2>&& other) {
     return this->value() >>= other.value();
-  }
-  template <typename T2>
-  decltype(auto) operator==(const T2& other) {
-    return this->value() == other;
-  }
-  template <typename T2>
-  decltype(auto) operator==(T2&& other) {
-    return this->value() == other;
-  }
-  template <typename T2>
-  decltype(auto) operator==(const clone_ptr<T2>& other) {
-    return this->value() == other.value();
-  }
-  template <typename T2>
-  decltype(auto) operator==(clone_ptr<T2>&& other) {
-    return this->value() == other.value();
-  }
-  template <typename T2>
-  decltype(auto) operator!=(const T2& other) {
-    return this->value() != other;
-  }
-  template <typename T2>
-  decltype(auto) operator!=(T2&& other) {
-    return this->value() != other;
-  }
-  template <typename T2>
-  decltype(auto) operator!=(const clone_ptr<T2>& other) {
-    return this->value() != other.value();
-  }
-  template <typename T2>
-  decltype(auto) operator!=(clone_ptr<T2>&& other) {
-    return this->value() != other.value();
   }
   template <typename T2>
   decltype(auto) operator<=(const T2& other) {
@@ -1138,11 +1092,11 @@ class joint_ptr : public std::shared_ptr<T> {
     return this->value() <= other;
   }
   template <typename T2>
-  decltype(auto) operator<=(const clone_ptr<T2>& other) {
+  decltype(auto) operator<=(const joint_ptr<T2>& other) {
     return this->value() <= other.value();
   }
   template <typename T2>
-  decltype(auto) operator<=(clone_ptr<T2>&& other) {
+  decltype(auto) operator<=(joint_ptr<T2>&& other) {
     return this->value() <= other.value();
   }
   template <typename T2>
@@ -1154,11 +1108,11 @@ class joint_ptr : public std::shared_ptr<T> {
     return this->value() >= other;
   }
   template <typename T2>
-  decltype(auto) operator>=(const clone_ptr<T2>& other) {
+  decltype(auto) operator>=(const joint_ptr<T2>& other) {
     return this->value() >= other.value();
   }
   template <typename T2>
-  decltype(auto) operator>=(clone_ptr<T2>&& other) {
+  decltype(auto) operator>=(joint_ptr<T2>&& other) {
     return this->value() >= other.value();
   }
   template <typename T2>
@@ -1170,11 +1124,11 @@ class joint_ptr : public std::shared_ptr<T> {
     return this->value() && other;
   }
   template <typename T2>
-  decltype(auto) operator&&(const clone_ptr<T2>& other) {
+  decltype(auto) operator&&(const joint_ptr<T2>& other) {
     return this->value() && other.value();
   }
   template <typename T2>
-  decltype(auto) operator&&(clone_ptr<T2>&& other) {
+  decltype(auto) operator&&(joint_ptr<T2>&& other) {
     return this->value() && other.value();
   }
   template <typename T2>
@@ -1186,11 +1140,11 @@ class joint_ptr : public std::shared_ptr<T> {
     return this->value() || other;
   }
   template <typename T2>
-  decltype(auto) operator||(const clone_ptr<T2>& other) {
+  decltype(auto) operator||(const joint_ptr<T2>& other) {
     return this->value() || other.value();
   }
   template <typename T2>
-  decltype(auto) operator||(clone_ptr<T2>&& other) {
+  decltype(auto) operator||(joint_ptr<T2>&& other) {
     return this->value() || other.value();
   }
   template <typename T2>
@@ -1230,17 +1184,35 @@ class joint_ptr : public std::shared_ptr<T> {
     (this->value())(std::forward<Args>(params)...);
   }
   bool operator==(std::nullptr_t) { return this->get() == nullptr; }
-  bool operator!=(std::nullptr_t) { return this->get() != nullptr; }
+  template <typename T2>
+  decltype(auto) operator==(T2* other) {
+    return this->get() == other;
+  }
+  template <typename T2>
+  decltype(auto) operator==(const joint_ptr<T2>& other) {
+    return this->get() == other.get();
+  }
+  template <typename T2>
+  decltype(auto) operator==(joint_ptr<T2>&& other) {
+    return this->get() == other.get();
+  }
+  template <typename T2>
+  bool operator!=(T2 other) {
+    return !(operator==(other));
+  }
   inline explicit operator bool() const noexcept {
     return this->get() != nullptr;
   }
   T& operator*() const { return this->value(); }
-  T* operator->() const { return &(this->value()); }
+  T* operator->() const { return &(this->value()); };
 };
 
 template <typename T>
 class stack_ptr : public std::optional<T> {
   using Parent = std::optional<T>;
+  static_assert(!std::is_array<T>::value,
+                "Error: stack_ptr not supported on raw arrays, they are not "
+                "easily copyable.");
 
  public:
   template <typename... Args,
@@ -1255,10 +1227,8 @@ class stack_ptr : public std::optional<T> {
   void reset(std::nullptr_t) { Parent::reset(); }
   void reset(const T& v) { Parent::operator=(v); }
   void reset(T&& v) { Parent::operator=(v); }
-  void reset(T* v) {
-    if (v == nullptr) Parent::operator=(std::nullopt);
-    Parent::operator=(*v);
-  }
+  void reset(T* v) = delete;
+
   template <typename T2>
   void reset(const stack_ptr<T2>& other) {
     if (other.get() == nullptr) {
@@ -1268,7 +1238,7 @@ class stack_ptr : public std::optional<T> {
     Parent::operator=(other);
   }
 
-  stack_ptr() {}
+  stack_ptr() { reset(nullptr); }
   stack_ptr(std::nullptr_t) { reset(nullptr); }
   stack_ptr(T* other) { reset(other); }
   stack_ptr(const stack_ptr& other) { reset(other); }
@@ -1325,11 +1295,11 @@ class stack_ptr : public std::optional<T> {
     return this->value() + other;
   }
   template <typename T2>
-  decltype(auto) operator+(const clone_ptr<T2>& other) {
+  decltype(auto) operator+(const stack_ptr<T2>& other) {
     return this->value() + other.value();
   }
   template <typename T2>
-  decltype(auto) operator+(clone_ptr<T2>&& other) {
+  decltype(auto) operator+(stack_ptr<T2>&& other) {
     return this->value() + other.value();
   }
   template <typename T2>
@@ -1341,11 +1311,11 @@ class stack_ptr : public std::optional<T> {
     return this->value() - other;
   }
   template <typename T2>
-  decltype(auto) operator-(const clone_ptr<T2>& other) {
+  decltype(auto) operator-(const stack_ptr<T2>& other) {
     return this->value() - other.value();
   }
   template <typename T2>
-  decltype(auto) operator-(clone_ptr<T2>&& other) {
+  decltype(auto) operator-(stack_ptr<T2>&& other) {
     return this->value() - other.value();
   }
   template <typename T2>
@@ -1357,11 +1327,11 @@ class stack_ptr : public std::optional<T> {
     return this->value() * other;
   }
   template <typename T2>
-  decltype(auto) operator*(const clone_ptr<T2>& other) {
+  decltype(auto) operator*(const stack_ptr<T2>& other) {
     return this->value() * other.value();
   }
   template <typename T2>
-  decltype(auto) operator*(clone_ptr<T2>&& other) {
+  decltype(auto) operator*(stack_ptr<T2>&& other) {
     return this->value() * other.value();
   }
   template <typename T2>
@@ -1373,11 +1343,11 @@ class stack_ptr : public std::optional<T> {
     return this->value() / other;
   }
   template <typename T2>
-  decltype(auto) operator/(const clone_ptr<T2>& other) {
+  decltype(auto) operator/(const stack_ptr<T2>& other) {
     return this->value() / other.value();
   }
   template <typename T2>
-  decltype(auto) operator/(clone_ptr<T2>&& other) {
+  decltype(auto) operator/(stack_ptr<T2>&& other) {
     return this->value() / other.value();
   }
   template <typename T2>
@@ -1389,11 +1359,11 @@ class stack_ptr : public std::optional<T> {
     return this->value() % other;
   }
   template <typename T2>
-  decltype(auto) operator%(const clone_ptr<T2>& other) {
+  decltype(auto) operator%(const stack_ptr<T2>& other) {
     return this->value() % other.value();
   }
   template <typename T2>
-  decltype(auto) operator%(clone_ptr<T2>&& other) {
+  decltype(auto) operator%(stack_ptr<T2>&& other) {
     return this->value() % other.value();
   }
   template <typename T2>
@@ -1405,11 +1375,11 @@ class stack_ptr : public std::optional<T> {
     return this->value() ^ other;
   }
   template <typename T2>
-  decltype(auto) operator^(const clone_ptr<T2>& other) {
+  decltype(auto) operator^(const stack_ptr<T2>& other) {
     return this->value() ^ other.value();
   }
   template <typename T2>
-  decltype(auto) operator^(clone_ptr<T2>&& other) {
+  decltype(auto) operator^(stack_ptr<T2>&& other) {
     return this->value() ^ other.value();
   }
   template <typename T2>
@@ -1421,11 +1391,11 @@ class stack_ptr : public std::optional<T> {
     return this->value() & other;
   }
   template <typename T2>
-  decltype(auto) operator&(const clone_ptr<T2>& other) {
+  decltype(auto) operator&(const stack_ptr<T2>& other) {
     return this->value() & other.value();
   }
   template <typename T2>
-  decltype(auto) operator&(clone_ptr<T2>&& other) {
+  decltype(auto) operator&(stack_ptr<T2>&& other) {
     return this->value() & other.value();
   }
   template <typename T2>
@@ -1437,11 +1407,11 @@ class stack_ptr : public std::optional<T> {
     return this->value() | other;
   }
   template <typename T2>
-  decltype(auto) operator|(const clone_ptr<T2>& other) {
+  decltype(auto) operator|(const stack_ptr<T2>& other) {
     return this->value() | other.value();
   }
   template <typename T2>
-  decltype(auto) operator|(clone_ptr<T2>&& other) {
+  decltype(auto) operator|(stack_ptr<T2>&& other) {
     return this->value() | other.value();
   }
   template <typename T2>
@@ -1453,11 +1423,11 @@ class stack_ptr : public std::optional<T> {
     return this->value() < other;
   }
   template <typename T2>
-  decltype(auto) operator<(const clone_ptr<T2>& other) {
+  decltype(auto) operator<(const stack_ptr<T2>& other) {
     return this->value() < other.value();
   }
   template <typename T2>
-  decltype(auto) operator<(clone_ptr<T2>&& other) {
+  decltype(auto) operator<(stack_ptr<T2>&& other) {
     return this->value() < other.value();
   }
   template <typename T2>
@@ -1469,11 +1439,11 @@ class stack_ptr : public std::optional<T> {
     return this->value() > other;
   }
   template <typename T2>
-  decltype(auto) operator>(const clone_ptr<T2>& other) {
+  decltype(auto) operator>(const stack_ptr<T2>& other) {
     return this->value() > other.value();
   }
   template <typename T2>
-  decltype(auto) operator>(clone_ptr<T2>&& other) {
+  decltype(auto) operator>(stack_ptr<T2>&& other) {
     return this->value() > other.value();
   }
   template <typename T2>
@@ -1485,11 +1455,11 @@ class stack_ptr : public std::optional<T> {
     return this->value() += other;
   }
   template <typename T2>
-  decltype(auto) operator+=(const clone_ptr<T2>& other) {
+  decltype(auto) operator+=(const stack_ptr<T2>& other) {
     return this->value() += other.value();
   }
   template <typename T2>
-  decltype(auto) operator+=(clone_ptr<T2>&& other) {
+  decltype(auto) operator+=(stack_ptr<T2>&& other) {
     return this->value() += other.value();
   }
   template <typename T2>
@@ -1501,11 +1471,11 @@ class stack_ptr : public std::optional<T> {
     return this->value() -= other;
   }
   template <typename T2>
-  decltype(auto) operator-=(const clone_ptr<T2>& other) {
+  decltype(auto) operator-=(const stack_ptr<T2>& other) {
     return this->value() -= other.value();
   }
   template <typename T2>
-  decltype(auto) operator-=(clone_ptr<T2>&& other) {
+  decltype(auto) operator-=(stack_ptr<T2>&& other) {
     return this->value() -= other.value();
   }
   template <typename T2>
@@ -1517,11 +1487,11 @@ class stack_ptr : public std::optional<T> {
     return this->value() *= other;
   }
   template <typename T2>
-  decltype(auto) operator*=(const clone_ptr<T2>& other) {
+  decltype(auto) operator*=(const stack_ptr<T2>& other) {
     return this->value() *= other.value();
   }
   template <typename T2>
-  decltype(auto) operator*=(clone_ptr<T2>&& other) {
+  decltype(auto) operator*=(stack_ptr<T2>&& other) {
     return this->value() *= other.value();
   }
   template <typename T2>
@@ -1533,11 +1503,11 @@ class stack_ptr : public std::optional<T> {
     return this->value() /= other;
   }
   template <typename T2>
-  decltype(auto) operator/=(const clone_ptr<T2>& other) {
+  decltype(auto) operator/=(const stack_ptr<T2>& other) {
     return this->value() /= other.value();
   }
   template <typename T2>
-  decltype(auto) operator/=(clone_ptr<T2>&& other) {
+  decltype(auto) operator/=(stack_ptr<T2>&& other) {
     return this->value() /= other.value();
   }
   template <typename T2>
@@ -1549,11 +1519,11 @@ class stack_ptr : public std::optional<T> {
     return this->value() %= other;
   }
   template <typename T2>
-  decltype(auto) operator%=(const clone_ptr<T2>& other) {
+  decltype(auto) operator%=(const stack_ptr<T2>& other) {
     return this->value() %= other.value();
   }
   template <typename T2>
-  decltype(auto) operator%=(clone_ptr<T2>&& other) {
+  decltype(auto) operator%=(stack_ptr<T2>&& other) {
     return this->value() %= other.value();
   }
   template <typename T2>
@@ -1565,11 +1535,11 @@ class stack_ptr : public std::optional<T> {
     return this->value() ^= other;
   }
   template <typename T2>
-  decltype(auto) operator^=(const clone_ptr<T2>& other) {
+  decltype(auto) operator^=(const stack_ptr<T2>& other) {
     return this->value() ^= other.value();
   }
   template <typename T2>
-  decltype(auto) operator^=(clone_ptr<T2>&& other) {
+  decltype(auto) operator^=(stack_ptr<T2>&& other) {
     return this->value() ^= other.value();
   }
   template <typename T2>
@@ -1581,11 +1551,11 @@ class stack_ptr : public std::optional<T> {
     return this->value() &= other;
   }
   template <typename T2>
-  decltype(auto) operator&=(const clone_ptr<T2>& other) {
+  decltype(auto) operator&=(const stack_ptr<T2>& other) {
     return this->value() &= other.value();
   }
   template <typename T2>
-  decltype(auto) operator&=(clone_ptr<T2>&& other) {
+  decltype(auto) operator&=(stack_ptr<T2>&& other) {
     return this->value() &= other.value();
   }
   template <typename T2>
@@ -1597,11 +1567,11 @@ class stack_ptr : public std::optional<T> {
     return this->value() |= other;
   }
   template <typename T2>
-  decltype(auto) operator|=(const clone_ptr<T2>& other) {
+  decltype(auto) operator|=(const stack_ptr<T2>& other) {
     return this->value() |= other.value();
   }
   template <typename T2>
-  decltype(auto) operator|=(clone_ptr<T2>&& other) {
+  decltype(auto) operator|=(stack_ptr<T2>&& other) {
     return this->value() |= other.value();
   }
   template <typename T2>
@@ -1613,11 +1583,11 @@ class stack_ptr : public std::optional<T> {
     return this->value() << other;
   }
   template <typename T2>
-  decltype(auto) operator<<(const clone_ptr<T2>& other) {
+  decltype(auto) operator<<(const stack_ptr<T2>& other) {
     return this->value() << other.value();
   }
   template <typename T2>
-  decltype(auto) operator<<(clone_ptr<T2>&& other) {
+  decltype(auto) operator<<(stack_ptr<T2>&& other) {
     return this->value() << other.value();
   }
   template <typename T2>
@@ -1629,11 +1599,11 @@ class stack_ptr : public std::optional<T> {
     return this->value() >> other;
   }
   template <typename T2>
-  decltype(auto) operator>>(const clone_ptr<T2>& other) {
+  decltype(auto) operator>>(const stack_ptr<T2>& other) {
     return this->value() >> other.value();
   }
   template <typename T2>
-  decltype(auto) operator>>(clone_ptr<T2>&& other) {
+  decltype(auto) operator>>(stack_ptr<T2>&& other) {
     return this->value() >> other.value();
   }
   template <typename T2>
@@ -1645,11 +1615,11 @@ class stack_ptr : public std::optional<T> {
     return this->value() <<= other;
   }
   template <typename T2>
-  decltype(auto) operator<<=(const clone_ptr<T2>& other) {
+  decltype(auto) operator<<=(const stack_ptr<T2>& other) {
     return this->value() <<= other.value();
   }
   template <typename T2>
-  decltype(auto) operator<<=(clone_ptr<T2>&& other) {
+  decltype(auto) operator<<=(stack_ptr<T2>&& other) {
     return this->value() <<= other.value();
   }
   template <typename T2>
@@ -1661,44 +1631,12 @@ class stack_ptr : public std::optional<T> {
     return this->value() >>= other;
   }
   template <typename T2>
-  decltype(auto) operator>>=(const clone_ptr<T2>& other) {
+  decltype(auto) operator>>=(const stack_ptr<T2>& other) {
     return this->value() >>= other.value();
   }
   template <typename T2>
-  decltype(auto) operator>>=(clone_ptr<T2>&& other) {
+  decltype(auto) operator>>=(stack_ptr<T2>&& other) {
     return this->value() >>= other.value();
-  }
-  template <typename T2>
-  decltype(auto) operator==(const T2& other) {
-    return this->value() == other;
-  }
-  template <typename T2>
-  decltype(auto) operator==(T2&& other) {
-    return this->value() == other;
-  }
-  template <typename T2>
-  decltype(auto) operator==(const clone_ptr<T2>& other) {
-    return this->value() == other.value();
-  }
-  template <typename T2>
-  decltype(auto) operator==(clone_ptr<T2>&& other) {
-    return this->value() == other.value();
-  }
-  template <typename T2>
-  decltype(auto) operator!=(const T2& other) {
-    return this->value() != other;
-  }
-  template <typename T2>
-  decltype(auto) operator!=(T2&& other) {
-    return this->value() != other;
-  }
-  template <typename T2>
-  decltype(auto) operator!=(const clone_ptr<T2>& other) {
-    return this->value() != other.value();
-  }
-  template <typename T2>
-  decltype(auto) operator!=(clone_ptr<T2>&& other) {
-    return this->value() != other.value();
   }
   template <typename T2>
   decltype(auto) operator<=(const T2& other) {
@@ -1709,11 +1647,11 @@ class stack_ptr : public std::optional<T> {
     return this->value() <= other;
   }
   template <typename T2>
-  decltype(auto) operator<=(const clone_ptr<T2>& other) {
+  decltype(auto) operator<=(const stack_ptr<T2>& other) {
     return this->value() <= other.value();
   }
   template <typename T2>
-  decltype(auto) operator<=(clone_ptr<T2>&& other) {
+  decltype(auto) operator<=(stack_ptr<T2>&& other) {
     return this->value() <= other.value();
   }
   template <typename T2>
@@ -1725,11 +1663,11 @@ class stack_ptr : public std::optional<T> {
     return this->value() >= other;
   }
   template <typename T2>
-  decltype(auto) operator>=(const clone_ptr<T2>& other) {
+  decltype(auto) operator>=(const stack_ptr<T2>& other) {
     return this->value() >= other.value();
   }
   template <typename T2>
-  decltype(auto) operator>=(clone_ptr<T2>&& other) {
+  decltype(auto) operator>=(stack_ptr<T2>&& other) {
     return this->value() >= other.value();
   }
   template <typename T2>
@@ -1741,11 +1679,11 @@ class stack_ptr : public std::optional<T> {
     return this->value() && other;
   }
   template <typename T2>
-  decltype(auto) operator&&(const clone_ptr<T2>& other) {
+  decltype(auto) operator&&(const stack_ptr<T2>& other) {
     return this->value() && other.value();
   }
   template <typename T2>
-  decltype(auto) operator&&(clone_ptr<T2>&& other) {
+  decltype(auto) operator&&(stack_ptr<T2>&& other) {
     return this->value() && other.value();
   }
   template <typename T2>
@@ -1757,11 +1695,11 @@ class stack_ptr : public std::optional<T> {
     return this->value() || other;
   }
   template <typename T2>
-  decltype(auto) operator||(const clone_ptr<T2>& other) {
+  decltype(auto) operator||(const stack_ptr<T2>& other) {
     return this->value() || other.value();
   }
   template <typename T2>
-  decltype(auto) operator||(clone_ptr<T2>&& other) {
+  decltype(auto) operator||(stack_ptr<T2>&& other) {
     return this->value() || other.value();
   }
   template <typename T2>
@@ -1801,12 +1739,27 @@ class stack_ptr : public std::optional<T> {
     (this->value())(std::forward<Args>(params)...);
   }
   bool operator==(std::nullptr_t) { return this->get() == nullptr; }
-  bool operator!=(std::nullptr_t) { return this->get() != nullptr; }
+  template <typename T2>
+  decltype(auto) operator==(T2* other) {
+    return this->get() == other;
+  }
+  template <typename T2>
+  decltype(auto) operator==(const stack_ptr<T2>& other) {
+    return this->get() == other.get();
+  }
+  template <typename T2>
+  decltype(auto) operator==(stack_ptr<T2>&& other) {
+    return this->get() == other.get();
+  }
+  template <typename T2>
+  bool operator!=(T2 other) {
+    return !(operator==(other));
+  }
   inline explicit operator bool() const noexcept {
     return this->get() != nullptr;
   }
   T& operator*() const { return this->value(); }
-  T* operator->() const { return &(this->value()); }
+  T* operator->() const { return &(this->value()); };
 };
 
 template <typename T>
@@ -1815,8 +1768,7 @@ class view_joint_ptr : public std::weak_ptr<T> {
 
  public:
   using std::weak_ptr<T>::weak_ptr;
-
-  joint_ptr<T> lock() { return Parent::lock(); }
+  joint_ptr<T> lock() const noexcept { return Parent::lock(); }
 };
 
 template <typename T>
@@ -1836,14 +1788,15 @@ class raw_ptr {
   void reset() { data = nullptr; }
   void reset(std::nullptr_t) { reset(); }
   void reset(T* other) { data = other; }
-  void reset(const T& other) { data = &other; }
+  void reset(const T& other) = delete;
 
+  void reset(T&& v) = delete;
   template <typename T2>
   void reset(const raw_ptr<T2>& other) {
     data = other.get();
   }
 
-  raw_ptr() {}
+  raw_ptr() { reset(nullptr); }
   raw_ptr(std::nullptr_t) { reset(nullptr); }
   raw_ptr(T* other) { reset(other); }
   raw_ptr(const raw_ptr& other) { reset(other); }
@@ -1900,11 +1853,11 @@ class raw_ptr {
     return this->value() + other;
   }
   template <typename T2>
-  decltype(auto) operator+(const clone_ptr<T2>& other) {
+  decltype(auto) operator+(const raw_ptr<T2>& other) {
     return this->value() + other.value();
   }
   template <typename T2>
-  decltype(auto) operator+(clone_ptr<T2>&& other) {
+  decltype(auto) operator+(raw_ptr<T2>&& other) {
     return this->value() + other.value();
   }
   template <typename T2>
@@ -1916,11 +1869,11 @@ class raw_ptr {
     return this->value() - other;
   }
   template <typename T2>
-  decltype(auto) operator-(const clone_ptr<T2>& other) {
+  decltype(auto) operator-(const raw_ptr<T2>& other) {
     return this->value() - other.value();
   }
   template <typename T2>
-  decltype(auto) operator-(clone_ptr<T2>&& other) {
+  decltype(auto) operator-(raw_ptr<T2>&& other) {
     return this->value() - other.value();
   }
   template <typename T2>
@@ -1932,11 +1885,11 @@ class raw_ptr {
     return this->value() * other;
   }
   template <typename T2>
-  decltype(auto) operator*(const clone_ptr<T2>& other) {
+  decltype(auto) operator*(const raw_ptr<T2>& other) {
     return this->value() * other.value();
   }
   template <typename T2>
-  decltype(auto) operator*(clone_ptr<T2>&& other) {
+  decltype(auto) operator*(raw_ptr<T2>&& other) {
     return this->value() * other.value();
   }
   template <typename T2>
@@ -1948,11 +1901,11 @@ class raw_ptr {
     return this->value() / other;
   }
   template <typename T2>
-  decltype(auto) operator/(const clone_ptr<T2>& other) {
+  decltype(auto) operator/(const raw_ptr<T2>& other) {
     return this->value() / other.value();
   }
   template <typename T2>
-  decltype(auto) operator/(clone_ptr<T2>&& other) {
+  decltype(auto) operator/(raw_ptr<T2>&& other) {
     return this->value() / other.value();
   }
   template <typename T2>
@@ -1964,11 +1917,11 @@ class raw_ptr {
     return this->value() % other;
   }
   template <typename T2>
-  decltype(auto) operator%(const clone_ptr<T2>& other) {
+  decltype(auto) operator%(const raw_ptr<T2>& other) {
     return this->value() % other.value();
   }
   template <typename T2>
-  decltype(auto) operator%(clone_ptr<T2>&& other) {
+  decltype(auto) operator%(raw_ptr<T2>&& other) {
     return this->value() % other.value();
   }
   template <typename T2>
@@ -1980,11 +1933,11 @@ class raw_ptr {
     return this->value() ^ other;
   }
   template <typename T2>
-  decltype(auto) operator^(const clone_ptr<T2>& other) {
+  decltype(auto) operator^(const raw_ptr<T2>& other) {
     return this->value() ^ other.value();
   }
   template <typename T2>
-  decltype(auto) operator^(clone_ptr<T2>&& other) {
+  decltype(auto) operator^(raw_ptr<T2>&& other) {
     return this->value() ^ other.value();
   }
   template <typename T2>
@@ -1996,11 +1949,11 @@ class raw_ptr {
     return this->value() & other;
   }
   template <typename T2>
-  decltype(auto) operator&(const clone_ptr<T2>& other) {
+  decltype(auto) operator&(const raw_ptr<T2>& other) {
     return this->value() & other.value();
   }
   template <typename T2>
-  decltype(auto) operator&(clone_ptr<T2>&& other) {
+  decltype(auto) operator&(raw_ptr<T2>&& other) {
     return this->value() & other.value();
   }
   template <typename T2>
@@ -2012,11 +1965,11 @@ class raw_ptr {
     return this->value() | other;
   }
   template <typename T2>
-  decltype(auto) operator|(const clone_ptr<T2>& other) {
+  decltype(auto) operator|(const raw_ptr<T2>& other) {
     return this->value() | other.value();
   }
   template <typename T2>
-  decltype(auto) operator|(clone_ptr<T2>&& other) {
+  decltype(auto) operator|(raw_ptr<T2>&& other) {
     return this->value() | other.value();
   }
   template <typename T2>
@@ -2028,11 +1981,11 @@ class raw_ptr {
     return this->value() < other;
   }
   template <typename T2>
-  decltype(auto) operator<(const clone_ptr<T2>& other) {
+  decltype(auto) operator<(const raw_ptr<T2>& other) {
     return this->value() < other.value();
   }
   template <typename T2>
-  decltype(auto) operator<(clone_ptr<T2>&& other) {
+  decltype(auto) operator<(raw_ptr<T2>&& other) {
     return this->value() < other.value();
   }
   template <typename T2>
@@ -2044,11 +1997,11 @@ class raw_ptr {
     return this->value() > other;
   }
   template <typename T2>
-  decltype(auto) operator>(const clone_ptr<T2>& other) {
+  decltype(auto) operator>(const raw_ptr<T2>& other) {
     return this->value() > other.value();
   }
   template <typename T2>
-  decltype(auto) operator>(clone_ptr<T2>&& other) {
+  decltype(auto) operator>(raw_ptr<T2>&& other) {
     return this->value() > other.value();
   }
   template <typename T2>
@@ -2060,11 +2013,11 @@ class raw_ptr {
     return this->value() += other;
   }
   template <typename T2>
-  decltype(auto) operator+=(const clone_ptr<T2>& other) {
+  decltype(auto) operator+=(const raw_ptr<T2>& other) {
     return this->value() += other.value();
   }
   template <typename T2>
-  decltype(auto) operator+=(clone_ptr<T2>&& other) {
+  decltype(auto) operator+=(raw_ptr<T2>&& other) {
     return this->value() += other.value();
   }
   template <typename T2>
@@ -2076,11 +2029,11 @@ class raw_ptr {
     return this->value() -= other;
   }
   template <typename T2>
-  decltype(auto) operator-=(const clone_ptr<T2>& other) {
+  decltype(auto) operator-=(const raw_ptr<T2>& other) {
     return this->value() -= other.value();
   }
   template <typename T2>
-  decltype(auto) operator-=(clone_ptr<T2>&& other) {
+  decltype(auto) operator-=(raw_ptr<T2>&& other) {
     return this->value() -= other.value();
   }
   template <typename T2>
@@ -2092,11 +2045,11 @@ class raw_ptr {
     return this->value() *= other;
   }
   template <typename T2>
-  decltype(auto) operator*=(const clone_ptr<T2>& other) {
+  decltype(auto) operator*=(const raw_ptr<T2>& other) {
     return this->value() *= other.value();
   }
   template <typename T2>
-  decltype(auto) operator*=(clone_ptr<T2>&& other) {
+  decltype(auto) operator*=(raw_ptr<T2>&& other) {
     return this->value() *= other.value();
   }
   template <typename T2>
@@ -2108,11 +2061,11 @@ class raw_ptr {
     return this->value() /= other;
   }
   template <typename T2>
-  decltype(auto) operator/=(const clone_ptr<T2>& other) {
+  decltype(auto) operator/=(const raw_ptr<T2>& other) {
     return this->value() /= other.value();
   }
   template <typename T2>
-  decltype(auto) operator/=(clone_ptr<T2>&& other) {
+  decltype(auto) operator/=(raw_ptr<T2>&& other) {
     return this->value() /= other.value();
   }
   template <typename T2>
@@ -2124,11 +2077,11 @@ class raw_ptr {
     return this->value() %= other;
   }
   template <typename T2>
-  decltype(auto) operator%=(const clone_ptr<T2>& other) {
+  decltype(auto) operator%=(const raw_ptr<T2>& other) {
     return this->value() %= other.value();
   }
   template <typename T2>
-  decltype(auto) operator%=(clone_ptr<T2>&& other) {
+  decltype(auto) operator%=(raw_ptr<T2>&& other) {
     return this->value() %= other.value();
   }
   template <typename T2>
@@ -2140,11 +2093,11 @@ class raw_ptr {
     return this->value() ^= other;
   }
   template <typename T2>
-  decltype(auto) operator^=(const clone_ptr<T2>& other) {
+  decltype(auto) operator^=(const raw_ptr<T2>& other) {
     return this->value() ^= other.value();
   }
   template <typename T2>
-  decltype(auto) operator^=(clone_ptr<T2>&& other) {
+  decltype(auto) operator^=(raw_ptr<T2>&& other) {
     return this->value() ^= other.value();
   }
   template <typename T2>
@@ -2156,11 +2109,11 @@ class raw_ptr {
     return this->value() &= other;
   }
   template <typename T2>
-  decltype(auto) operator&=(const clone_ptr<T2>& other) {
+  decltype(auto) operator&=(const raw_ptr<T2>& other) {
     return this->value() &= other.value();
   }
   template <typename T2>
-  decltype(auto) operator&=(clone_ptr<T2>&& other) {
+  decltype(auto) operator&=(raw_ptr<T2>&& other) {
     return this->value() &= other.value();
   }
   template <typename T2>
@@ -2172,11 +2125,11 @@ class raw_ptr {
     return this->value() |= other;
   }
   template <typename T2>
-  decltype(auto) operator|=(const clone_ptr<T2>& other) {
+  decltype(auto) operator|=(const raw_ptr<T2>& other) {
     return this->value() |= other.value();
   }
   template <typename T2>
-  decltype(auto) operator|=(clone_ptr<T2>&& other) {
+  decltype(auto) operator|=(raw_ptr<T2>&& other) {
     return this->value() |= other.value();
   }
   template <typename T2>
@@ -2188,11 +2141,11 @@ class raw_ptr {
     return this->value() << other;
   }
   template <typename T2>
-  decltype(auto) operator<<(const clone_ptr<T2>& other) {
+  decltype(auto) operator<<(const raw_ptr<T2>& other) {
     return this->value() << other.value();
   }
   template <typename T2>
-  decltype(auto) operator<<(clone_ptr<T2>&& other) {
+  decltype(auto) operator<<(raw_ptr<T2>&& other) {
     return this->value() << other.value();
   }
   template <typename T2>
@@ -2204,11 +2157,11 @@ class raw_ptr {
     return this->value() >> other;
   }
   template <typename T2>
-  decltype(auto) operator>>(const clone_ptr<T2>& other) {
+  decltype(auto) operator>>(const raw_ptr<T2>& other) {
     return this->value() >> other.value();
   }
   template <typename T2>
-  decltype(auto) operator>>(clone_ptr<T2>&& other) {
+  decltype(auto) operator>>(raw_ptr<T2>&& other) {
     return this->value() >> other.value();
   }
   template <typename T2>
@@ -2220,11 +2173,11 @@ class raw_ptr {
     return this->value() <<= other;
   }
   template <typename T2>
-  decltype(auto) operator<<=(const clone_ptr<T2>& other) {
+  decltype(auto) operator<<=(const raw_ptr<T2>& other) {
     return this->value() <<= other.value();
   }
   template <typename T2>
-  decltype(auto) operator<<=(clone_ptr<T2>&& other) {
+  decltype(auto) operator<<=(raw_ptr<T2>&& other) {
     return this->value() <<= other.value();
   }
   template <typename T2>
@@ -2236,44 +2189,12 @@ class raw_ptr {
     return this->value() >>= other;
   }
   template <typename T2>
-  decltype(auto) operator>>=(const clone_ptr<T2>& other) {
+  decltype(auto) operator>>=(const raw_ptr<T2>& other) {
     return this->value() >>= other.value();
   }
   template <typename T2>
-  decltype(auto) operator>>=(clone_ptr<T2>&& other) {
+  decltype(auto) operator>>=(raw_ptr<T2>&& other) {
     return this->value() >>= other.value();
-  }
-  template <typename T2>
-  decltype(auto) operator==(const T2& other) {
-    return this->value() == other;
-  }
-  template <typename T2>
-  decltype(auto) operator==(T2&& other) {
-    return this->value() == other;
-  }
-  template <typename T2>
-  decltype(auto) operator==(const clone_ptr<T2>& other) {
-    return this->value() == other.value();
-  }
-  template <typename T2>
-  decltype(auto) operator==(clone_ptr<T2>&& other) {
-    return this->value() == other.value();
-  }
-  template <typename T2>
-  decltype(auto) operator!=(const T2& other) {
-    return this->value() != other;
-  }
-  template <typename T2>
-  decltype(auto) operator!=(T2&& other) {
-    return this->value() != other;
-  }
-  template <typename T2>
-  decltype(auto) operator!=(const clone_ptr<T2>& other) {
-    return this->value() != other.value();
-  }
-  template <typename T2>
-  decltype(auto) operator!=(clone_ptr<T2>&& other) {
-    return this->value() != other.value();
   }
   template <typename T2>
   decltype(auto) operator<=(const T2& other) {
@@ -2284,11 +2205,11 @@ class raw_ptr {
     return this->value() <= other;
   }
   template <typename T2>
-  decltype(auto) operator<=(const clone_ptr<T2>& other) {
+  decltype(auto) operator<=(const raw_ptr<T2>& other) {
     return this->value() <= other.value();
   }
   template <typename T2>
-  decltype(auto) operator<=(clone_ptr<T2>&& other) {
+  decltype(auto) operator<=(raw_ptr<T2>&& other) {
     return this->value() <= other.value();
   }
   template <typename T2>
@@ -2300,11 +2221,11 @@ class raw_ptr {
     return this->value() >= other;
   }
   template <typename T2>
-  decltype(auto) operator>=(const clone_ptr<T2>& other) {
+  decltype(auto) operator>=(const raw_ptr<T2>& other) {
     return this->value() >= other.value();
   }
   template <typename T2>
-  decltype(auto) operator>=(clone_ptr<T2>&& other) {
+  decltype(auto) operator>=(raw_ptr<T2>&& other) {
     return this->value() >= other.value();
   }
   template <typename T2>
@@ -2316,11 +2237,11 @@ class raw_ptr {
     return this->value() && other;
   }
   template <typename T2>
-  decltype(auto) operator&&(const clone_ptr<T2>& other) {
+  decltype(auto) operator&&(const raw_ptr<T2>& other) {
     return this->value() && other.value();
   }
   template <typename T2>
-  decltype(auto) operator&&(clone_ptr<T2>&& other) {
+  decltype(auto) operator&&(raw_ptr<T2>&& other) {
     return this->value() && other.value();
   }
   template <typename T2>
@@ -2332,11 +2253,11 @@ class raw_ptr {
     return this->value() || other;
   }
   template <typename T2>
-  decltype(auto) operator||(const clone_ptr<T2>& other) {
+  decltype(auto) operator||(const raw_ptr<T2>& other) {
     return this->value() || other.value();
   }
   template <typename T2>
-  decltype(auto) operator||(clone_ptr<T2>&& other) {
+  decltype(auto) operator||(raw_ptr<T2>&& other) {
     return this->value() || other.value();
   }
   template <typename T2>
@@ -2376,12 +2297,27 @@ class raw_ptr {
     (this->value())(std::forward<Args>(params)...);
   }
   bool operator==(std::nullptr_t) { return this->get() == nullptr; }
-  bool operator!=(std::nullptr_t) { return this->get() != nullptr; }
+  template <typename T2>
+  decltype(auto) operator==(T2* other) {
+    return this->get() == other;
+  }
+  template <typename T2>
+  decltype(auto) operator==(const raw_ptr<T2>& other) {
+    return this->get() == other.get();
+  }
+  template <typename T2>
+  decltype(auto) operator==(raw_ptr<T2>&& other) {
+    return this->get() == other.get();
+  }
+  template <typename T2>
+  bool operator!=(T2 other) {
+    return !(operator==(other));
+  }
   inline explicit operator bool() const noexcept {
     return this->get() != nullptr;
   }
   T& operator*() const { return this->value(); }
-  T* operator->() const { return &(this->value()); }
+  T* operator->() const { return &(this->value()); };
 };
 
 namespace shortnames {

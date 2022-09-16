@@ -36,32 +36,32 @@
 using namespace estd::shortnames;
 
 struct TypeX : public estd::clonable {
-	virtual void print() = 0;
+    virtual void print() = 0;
 };
 
 struct TypeA : public TypeX {
-	int x;
-	int y;
-	int z;
+    int x;
+    int y;
+    int z;
 
-	TypeA(int x, int y, int z) : x(x), y(y), z(z) { std::cerr << "ran construct\n"; }
-	virtual void print() { std::cout << "TypeA(" << x << "," << y << "," << z << ")\n"; }
-	virtual ~TypeA() { std::cerr << "ran destruct\n"; }
+    TypeA(int x, int y, int z) : x(x), y(y), z(z) { std::cerr << "ran construct\n"; }
+    virtual void print() { std::cout << "TypeA(" << x << "," << y << "," << z << ")\n"; }
+    virtual ~TypeA() { std::cerr << "ran destruct\n"; }
 
-	clonable* clone() const {
-		std::cout << "ran clone\n";
-		return new TypeA(x, y, z);
-	}
+    clonable* clone() const {
+        std::cout << "ran clone\n";
+        return new TypeA(x, y, z);
+    }
 };
 
 struct TypeB : public TypeA {
-	TypeB(int x, int y, int z) : TypeA(x, y, z) {}
-	virtual void print() { std::cout << "TypeB(" << x << "," << y << "," << z << ")\n"; }
+    TypeB(int x, int y, int z) : TypeA(x, y, z) {}
+    virtual void print() { std::cout << "TypeB(" << x << "," << y << "," << z << ")\n"; }
 
-	clonable* clone() const {
-		std::cout << "ran clone\n";
-		return new TypeB(x, y, z);
-	}
+    clonable* clone() const {
+        std::cout << "ran clone\n";
+        return new TypeB(x, y, z);
+    }
 };
 
 int main() {
@@ -69,38 +69,38 @@ int main() {
     it += 1;
     std::cout << (*it) << std::endl;
 
-	estd::clone_ptr<std::vector<estd::clone_ptr<TypeX>>> arra = new std::vector<estd::clone_ptr<TypeX>>();
-	arra->resize(6);
+    estd::clone_ptr<std::vector<estd::clone_ptr<TypeX>>> arra = new std::vector<estd::clone_ptr<TypeX>>();
+    arra->resize(6);
 
-	arra[0] = new TypeA(1, 2, 3);
-	arra[1] = new TypeB(4, 5, 6);
-	arra[2] = new TypeA(7, 8, 9);
-	arra[3] = new TypeB(10, 11, 12);
-	arra[4] = arra[1];
-	arra[4] = arra[0];
-	arra[5] = arra[1];
+    arra[0] = new TypeA(1, 2, 3);
+    arra[1] = new TypeB(4, 5, 6);
+    arra[2] = new TypeA(7, 8, 9);
+    arra[3] = new TypeB(10, 11, 12);
+    arra[4] = arra[1];
+    arra[4] = arra[0];
+    arra[5] = arra[1];
 
-	for (auto& e : arra) { e->print(); }
+    for (auto& e : arra) { e->print(); }
 
-	estd::joint_ptr<int> i = 0;
-	estd::joint_ptr<int> j = i;
-	estd::joint_ptr<int> k;
+    estd::joint_ptr<int> i = 0;
+    estd::joint_ptr<int> j = i;
+    estd::joint_ptr<int> k;
 
     estd::view_joint_ptr<int> vjp = i;
 
-	i += 4;
-	std::cout << (*j) << std::endl;
+    i += 4;
+    std::cout << (*j) << std::endl;
 
-	std::cout << (vjp.lock() == nullptr) << std::endl;
-	std::cout << (j == nullptr) << std::endl;
-	std::cout << (k == nullptr) << std::endl<< std::endl;
+    std::cout << (vjp.lock() == nullptr) << std::endl;
+    std::cout << (j == nullptr) << std::endl;
+    std::cout << (k == nullptr) << std::endl << std::endl;
 
-	estd::clone_ptr<std::array<int, 2>> arr({1,2});
-	arr[0] = 7;
-	arr[1] = 8;
+    estd::clone_ptr<std::array<int, 2>> arr({1, 2});
+    arr[0] = 7;
+    arr[1] = 8;
 
-	std::cout << arr[0] << std::endl;
-	std::cout << arr[1] << std::endl;
+    std::cout << arr[0] << std::endl;
+    std::cout << arr[1] << std::endl;
 
-	return 0;
+    return 0;
 }
