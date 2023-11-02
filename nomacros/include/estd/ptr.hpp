@@ -138,7 +138,7 @@ class clone_ptr : public std::unique_ptr<T> {
   }
 
   decltype(auto) begin() { return this->value().begin(); }
-  decltype(auto) begin() const { this->value().begin(); }
+  decltype(auto) begin() const { return this->value().begin(); }
   decltype(auto) end() { return this->value().end(); }
   decltype(auto) end() const { return this->value().end(); }
   template <typename T2>
@@ -720,7 +720,7 @@ class joint_ptr : public std::shared_ptr<T> {
   }
 
   decltype(auto) begin() { return this->value().begin(); }
-  decltype(auto) begin() const { this->value().begin(); }
+  decltype(auto) begin() const { return this->value().begin(); }
   decltype(auto) end() { return this->value().end(); }
   decltype(auto) end() const { return this->value().end(); }
   template <typename T2>
@@ -1275,7 +1275,7 @@ class stack_ptr : public std::optional<T> {
   }
 
   decltype(auto) begin() { return this->value().begin(); }
-  decltype(auto) begin() const { this->value().begin(); }
+  decltype(auto) begin() const { return this->value().begin(); }
   decltype(auto) end() { return this->value().end(); }
   decltype(auto) end() const { return this->value().end(); }
   template <typename T2>
@@ -1833,7 +1833,7 @@ class raw_ptr {
   }
 
   decltype(auto) begin() { return this->value().begin(); }
-  decltype(auto) begin() const { this->value().begin(); }
+  decltype(auto) begin() const { return this->value().begin(); }
   decltype(auto) end() { return this->value().end(); }
   decltype(auto) end() const { return this->value().end(); }
   template <typename T2>

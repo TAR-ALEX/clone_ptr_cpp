@@ -81,7 +81,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define DEFINE_ALL_OPS(CLASS_NAME)                                                                                     \
     /* Iterators */                                                                                                    \
     decltype(auto) begin() { return this->value().begin(); }                                                           \
-    decltype(auto) begin() const { this->value().begin(); }                                                            \
+    decltype(auto) begin() const { return this->value().begin(); }                                                     \
     decltype(auto) end() { return this->value().end(); }                                                               \
     decltype(auto) end() const { return this->value().end(); }                                                         \
     /* Indexing */                                                                                                     \
