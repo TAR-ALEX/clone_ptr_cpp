@@ -35,6 +35,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <memory>
 #include <optional>
 #include <type_traits>
+#include <stdexcept>
 
 #define DEFINE_BIN_OP(OPT, CLASS_NAME)                                                                                 \
     template <typename T2>                                                                                             \
