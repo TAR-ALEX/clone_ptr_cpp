@@ -58,6 +58,10 @@ class clone_ptr : public std::unique_ptr<T> {
   using Parent = std::unique_ptr<T>;
 
  public:
+  template <typename T2>
+  inline T2* get() const noexcept {
+    return (T2*)Parent::get();
+  }
   inline T* get() const noexcept { return Parent::get(); }
   inline bool has_value() const { return this->get() != nullptr; }
   inline T& value() const {
@@ -139,7 +143,7 @@ class clone_ptr : public std::unique_ptr<T> {
   }
 
   decltype(auto) begin() { return this->value().begin(); }
-  decltype(auto) begin() const { return this->value().begin(); }
+  decltype(auto) begin() const { this->value().begin(); }
   decltype(auto) end() { return this->value().end(); }
   decltype(auto) end() const { return this->value().end(); }
   template <typename T2>
@@ -639,6 +643,10 @@ class joint_ptr : public std::shared_ptr<T> {
                 std::declval<Args>()...))>
   joint_ptr(Args&&... params) : Parent(new T(std::forward<Args>(params)...)) {}
 
+  template <typename T2>
+  inline T2* get() const noexcept {
+    return (T2*)Parent::get();
+  }
   inline T* get() const noexcept { return Parent::get(); }
   inline bool has_value() const { return this->get() != nullptr; }
   inline T& value() const {
@@ -721,7 +729,7 @@ class joint_ptr : public std::shared_ptr<T> {
   }
 
   decltype(auto) begin() { return this->value().begin(); }
-  decltype(auto) begin() const { return this->value().begin(); }
+  decltype(auto) begin() const { this->value().begin(); }
   decltype(auto) end() { return this->value().end(); }
   decltype(auto) end() const { return this->value().end(); }
   template <typename T2>
@@ -1223,6 +1231,10 @@ class stack_ptr : public std::optional<T> {
 
   inline bool has_value() const { return Parent::has_value(); }
   inline T& value() const { return *(const_cast<T*>(&(Parent::value()))); }
+  template <typename T2>
+  inline T2* get() const noexcept {
+    return (T2*)Parent::get();
+  }
   inline T* get() const { return Parent::has_value() ? &value() : nullptr; }
   void reset() { Parent::reset(); }
   void reset(std::nullptr_t) { Parent::reset(); }
@@ -1276,7 +1288,7 @@ class stack_ptr : public std::optional<T> {
   }
 
   decltype(auto) begin() { return this->value().begin(); }
-  decltype(auto) begin() const { return this->value().begin(); }
+  decltype(auto) begin() const { this->value().begin(); }
   decltype(auto) end() { return this->value().end(); }
   decltype(auto) end() const { return this->value().end(); }
   template <typename T2>
@@ -1778,6 +1790,10 @@ class raw_ptr {
   T* data = nullptr;
 
  public:
+  template <typename T2>
+  inline T2* get() const noexcept {
+    return (T2*)data;
+  }
   inline T* get() const noexcept { return data; }
   inline bool has_value() const { return this->get() != nullptr; }
   inline T& value() const {
@@ -1834,7 +1850,7 @@ class raw_ptr {
   }
 
   decltype(auto) begin() { return this->value().begin(); }
-  decltype(auto) begin() const { return this->value().begin(); }
+  decltype(auto) begin() const { this->value().begin(); }
   decltype(auto) end() { return this->value().end(); }
   decltype(auto) end() const { return this->value().end(); }
   template <typename T2>
