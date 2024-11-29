@@ -144,10 +144,11 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         return (this->value()), other;                                                                                 \
     }                                                                                                                  \
                                                                                                                        \
-    template <typename... Args>                                                                                        \
-    decltype(auto) operator()(Args&&... params) {                                                                      \
-        (this->value())(std::forward<Args>(params)...);                                                                \
-    }                                                                                                                  \
+    /*This seems to cause constructor issues with joint_ptr*/                                                          \
+    /*template <typename... Args> */                                                                                   \
+    /*decltype(auto) operator()(Args&&... params) {*/                                                                  \
+    /*    (this->value())(std::forward<Args>(params)...);*/                                                            \
+    /*}*/                                                                                                              \
                                                                                                                        \
     bool operator==(std::nullptr_t) { return this->get() == nullptr; }                                                 \
     template <typename T2>                                                                                             \

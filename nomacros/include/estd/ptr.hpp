@@ -602,10 +602,6 @@ class clone_ptr : public std::unique_ptr<T> {
   decltype(auto) operator,(T2&& other) {
     return (this->value()), other;
   }
-  template <typename... Args>
-  decltype(auto) operator()(Args&&... params) {
-    (this->value())(std::forward<Args>(params)...);
-  }
   bool operator==(std::nullptr_t) { return this->get() == nullptr; }
   template <typename T2>
   decltype(auto) operator==(T2* other) {
@@ -1188,10 +1184,6 @@ class joint_ptr : public std::shared_ptr<T> {
   decltype(auto) operator,(T2&& other) {
     return (this->value()), other;
   }
-  template <typename... Args>
-  decltype(auto) operator()(Args&&... params) {
-    (this->value())(std::forward<Args>(params)...);
-  }
   bool operator==(std::nullptr_t) { return this->get() == nullptr; }
   template <typename T2>
   decltype(auto) operator==(T2* other) {
@@ -1746,10 +1738,6 @@ class stack_ptr : public std::optional<T> {
   template <typename T2>
   decltype(auto) operator,(T2&& other) {
     return (this->value()), other;
-  }
-  template <typename... Args>
-  decltype(auto) operator()(Args&&... params) {
-    (this->value())(std::forward<Args>(params)...);
   }
   bool operator==(std::nullptr_t) { return this->get() == nullptr; }
   template <typename T2>
@@ -2308,10 +2296,6 @@ class raw_ptr {
   template <typename T2>
   decltype(auto) operator,(T2&& other) {
     return (this->value()), other;
-  }
-  template <typename... Args>
-  decltype(auto) operator()(Args&&... params) {
-    (this->value())(std::forward<Args>(params)...);
   }
   bool operator==(std::nullptr_t) { return this->get() == nullptr; }
   template <typename T2>
